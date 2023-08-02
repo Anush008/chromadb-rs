@@ -3,7 +3,7 @@ use reqwest::Response;
 use serde::Deserialize;
 use serde_json::Value;
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Default)]
 pub(crate) struct APIClientV1 {
     pub api_endpoint: String,
 }

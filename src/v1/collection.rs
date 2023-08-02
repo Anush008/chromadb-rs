@@ -2,16 +2,17 @@ use serde::Deserialize;
 use serde_json::{Map, Value};
 use std::collections::{HashMap, HashSet};
 
-use super::{api::APIClientV1, embeddings::EmbeddingFunction};
+use super::api::APIClientV1;
 
 pub type Metadata = Map<String, Value>;
 
+#[derive(Deserialize)]
 pub struct ChromaCollection {
+    #[serde(skip_deserializing)]
     api: APIClientV1,
-    i_embedding_function: Option<Box<EmbeddingFunction>>,
-    id: String,
-    metadata: Option<Metadata>,
-    name: String,
+    pub(super) id: String,
+    pub(super) metadata: Option<Metadata>,
+    pub(super) name: String,
 }
 
 impl ChromaCollection {
@@ -20,14 +21,12 @@ impl ChromaCollection {
         id: String,
         metadata: Option<Metadata>,
         api: APIClientV1,
-        i_embedding_function: Option<Box<EmbeddingFunction>>,
     ) -> ChromaCollection {
         ChromaCollection {
             api,
             id,
             metadata,
             name,
-            i_embedding_function,
         }
     }
 
@@ -35,10 +34,10 @@ impl ChromaCollection {
         require_embeddings_or_documents: bool,
         ids: Vec<&'a str>,
         embeddings: Option<Vec<Vec<f64>>>,
-        metadatas: Option<Vec<Value>>,
+        metadatas: Option<Vec<Metadata>>,
         documents: Option<Vec<&'a str>>,
-        embedding_function: Option<Box<EmbeddingFunction>>,
-    ) -> Result<(Vec<&'a str>, Vec<Vec<f64>>, Vec<Value>, Vec<&'a str>), String> {
+        embedding_function: impl Fn(Vec<&str>) -> Vec<Vec<f64>>,
+    ) -> Result<(Vec<&'a str>, Vec<Vec<f64>>, Vec<Metadata>, Vec<&'a str>), String> {
         let mut embeddings = embeddings;
         let documents = documents;
 
@@ -50,13 +49,7 @@ impl ChromaCollection {
 
         if embeddings.is_none() && documents.is_some() {
             let documents_array = documents.clone().unwrap();
-            if let Some(embedding_function) = embedding_function {
-                embeddings = Some(embedding_function(documents_array));
-            } else {
-                return Err(
-                    "EmbeddingFunction is None. Please configure an embedding function".into(),
-                );
-            }
+            embeddings = Some(embedding_function(documents_array));
         }
 
         if embeddings.is_none() {
