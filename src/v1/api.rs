@@ -1,9 +1,8 @@
+use super::commons::ChromaAPIError;
 use reqwest::Response;
 use serde_json::Value;
 
-use super::error::ChromaAPIError;
-
-pub struct APIClientV1 {
+pub(super) struct APIClientV1 {
     pub api_endpoint: String,
 }
 
@@ -13,11 +12,7 @@ impl<'a> APIClientV1 {
             api_endpoint: endpoint + "/api/v1",
         }
     }
-    pub async fn post(
-        &self,
-        path: &str,
-        json_body: Option<Value>,
-    ) -> Result<Response, ChromaAPIError> {
+    pub async fn post(&self, path: &str, json_body: Option<Value>) -> Result<Response, ChromaAPIError> {
         let client = reqwest::Client::new();
         let url = format!(
             "{api_endpoint}{path}",
@@ -43,7 +38,7 @@ impl<'a> APIClientV1 {
                     message: format!("{}: {}", res.status(), res.text().await.unwrap()),
                 }),
             },
-            Err(e) => Err(self.error(e)),
+            Err(e) => Err(ChromaAPIError::error(e)),
         }
     }
 
@@ -62,7 +57,7 @@ impl<'a> APIClientV1 {
                     message: format!("{}: {}", res.status(), res.text().await.unwrap()),
                 }),
             },
-            Err(e) => Err(self.error(e)),
+            Err(e) => Err(ChromaAPIError::error(e)),
         }
     }
 
@@ -81,13 +76,7 @@ impl<'a> APIClientV1 {
                     message: format!("{}: {}", res.status(), res.text().await.unwrap()),
                 }),
             },
-            Err(e) => Err(self.error(e)),
-        }
-    }
-
-    fn error(&self, err: reqwest::Error) -> ChromaAPIError {
-        ChromaAPIError {
-            message: err.to_string(),
+            Err(e) => Err(ChromaAPIError::error(e)),
         }
     }
 }

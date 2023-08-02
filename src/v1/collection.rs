@@ -1,5 +1,3 @@
-use super::commons::Result;
-
 use serde_json::Value;
 use std::collections::HashSet;
 
@@ -45,13 +43,13 @@ impl<T: IEmbeddingFunction> ChromaCollection<T> {
         metadatas: Option<Vec<Value>>,
         documents: Option<Vec<&'a str>>,
         embedding_function: Option<impl IEmbeddingFunction>,
-    ) -> Result<(Vec<&'a str>, Vec<Vec<f64>>, Vec<Value>, Vec<&'a str>)> {
+    ) -> Result<(Vec<&'a str>, Vec<Vec<f64>>, Vec<Value>, Vec<&'a str>), String> {
         let mut embeddings = embeddings;
         let documents = documents;
 
         if require_embeddings_or_documents {
             if embeddings.is_none() && documents.is_none() {
-                anyhow::bail!("embeddings and documents cannot both be none");
+                return Err("Embeddings and documents cannot both be None".into());
             }
         }
 
@@ -60,12 +58,14 @@ impl<T: IEmbeddingFunction> ChromaCollection<T> {
             if let Some(embedding_function) = embedding_function {
                 embeddings = Some(embedding_function.generate(documents_array).await);
             } else {
-                anyhow::bail!("EmbeddingFunction is None. Please configure an embedding function");
+                return Err(
+                    "EmbeddingFunction is None. Please configure an embedding function".into(),
+                );
             }
         }
 
         if embeddings.is_none() {
-            anyhow::bail!("Embeddings is undefined but shouldn't be");
+            return Err("Embeddings is None but shouldn't be".into());
         }
 
         let embeddings_array = embeddings.unwrap();
@@ -74,7 +74,7 @@ impl<T: IEmbeddingFunction> ChromaCollection<T> {
 
         for id in &ids {
             if id.is_empty() {
-                anyhow::bail!("Expected ids to be strings, found empty string");
+                return Err("Found empty string".into());
             }
         }
 
@@ -82,7 +82,9 @@ impl<T: IEmbeddingFunction> ChromaCollection<T> {
             || metadatas_array.len() != ids.len()
             || documents_array.len() != ids.len()
         {
-            anyhow::bail!("ids, embeddings, metadatas, and documents must all be the same length");
+            return Err(
+                "IDs, embeddings, metadatas, and documents must all be the same length".into(),
+            );
         }
 
         let unique_ids: HashSet<_> = ids.iter().collect();
@@ -91,10 +93,10 @@ impl<T: IEmbeddingFunction> ChromaCollection<T> {
                 .iter()
                 .filter(|id| ids.iter().filter(|x| x == id).count() > 1)
                 .collect();
-            anyhow::bail!(
+            return Err(format!(
                 "Expected IDs to be unique, found duplicates for: {:?}",
                 duplicate_ids
-            );
+            ));
         }
 
         Ok((ids, embeddings_array, metadatas_array, documents_array))
