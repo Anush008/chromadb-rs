@@ -6,15 +6,14 @@ pub struct ChromaClient {
 
 #[derive(Default)]
 pub struct ChromaClientOptions {
-    pub endpoint: Option<String>,
+    pub url: Option<String>,
 }
 
 const DEFAULT_ENDPOINT: &str = "http://localhost:8000";
 
 impl ChromaClient {
-    pub fn new(options: Option<ChromaClientOptions>) -> ChromaClient {
-        let options = options.unwrap_or_default();
-        let endpoint = options.endpoint.unwrap_or(DEFAULT_ENDPOINT.into());
+    pub fn new(options: ChromaClientOptions) -> ChromaClient {
+        let endpoint = options.url.unwrap_or(DEFAULT_ENDPOINT.into());
 
         let api = APIClient {
             api_endpoint: endpoint,

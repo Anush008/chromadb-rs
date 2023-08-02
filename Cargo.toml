@@ -1,5 +1,7 @@
 [package]
-name = "chroma-client"
+name = "chromadb"
+description = "A Rust client for  ChromaDB. www.trychroma.com/"
+authors = ["Anush008"]
 version = "0.1.0"
 edition = "2021"
 

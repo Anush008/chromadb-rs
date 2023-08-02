@@ -1,6 +1,6 @@
 use reqwest::Response;
 
-use super::ChromaAPIError;
+use super::error::ChromaAPIError;
 
 pub struct APIClient {
     pub api_endpoint: String,
