@@ -1,8 +1,10 @@
 use super::commons::ChromaAPIError;
 use reqwest::Response;
+use serde::Deserialize;
 use serde_json::Value;
 
-pub(super) struct APIClientV1 {
+#[derive(Deserialize, Clone)]
+pub(crate) struct APIClientV1 {
     pub api_endpoint: String,
 }
 
@@ -12,7 +14,11 @@ impl<'a> APIClientV1 {
             api_endpoint: endpoint + "/api/v1",
         }
     }
-    pub async fn post(&self, path: &str, json_body: Option<Value>) -> Result<Response, ChromaAPIError> {
+    pub async fn post(
+        &self,
+        path: &str,
+        json_body: Option<Value>,
+    ) -> Result<Response, ChromaAPIError> {
         let client = reqwest::Client::new();
         let url = format!(
             "{api_endpoint}{path}",
@@ -34,9 +40,10 @@ impl<'a> APIClientV1 {
         match res {
             Ok(res) => match res.status().is_success() {
                 true => Ok(res),
-                false => Err(ChromaAPIError {
-                    message: format!("{}: {}", res.status(), res.text().await.unwrap()),
-                }),
+                false => {
+                    let message = format!("{}: {}", res.status(), res.text().await.unwrap());
+                    Err(ChromaAPIError { message })
+                }
             },
             Err(e) => Err(ChromaAPIError::error(e)),
         }

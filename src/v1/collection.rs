@@ -1,24 +1,27 @@
-use serde_json::Value;
-use std::collections::HashSet;
+use serde::Deserialize;
+use serde_json::{Map, Value};
+use std::collections::{HashMap, HashSet};
 
-use super::{api::APIClientV1, embeddings::IEmbeddingFunction};
+use super::{api::APIClientV1, embeddings::EmbeddingFunction};
 
-pub struct ChromaCollection<T: IEmbeddingFunction> {
+pub type Metadata = Map<String, Value>;
+
+pub struct ChromaCollection {
     api: APIClientV1,
-    i_embedding_function: Option<T>,
-    pub id: String,
-    pub metadata: Option<Value>,
-    pub name: String,
+    i_embedding_function: Option<Box<EmbeddingFunction>>,
+    id: String,
+    metadata: Option<Metadata>,
+    name: String,
 }
 
-impl<T: IEmbeddingFunction> ChromaCollection<T> {
-    fn new(
-        api: APIClientV1,
-        i_embedding_function: Option<T>,
-        id: String,
-        metadata: Option<Value>,
+impl ChromaCollection {
+    pub(crate) fn new(
         name: String,
-    ) -> ChromaCollection<T> {
+        id: String,
+        metadata: Option<Metadata>,
+        api: APIClientV1,
+        i_embedding_function: Option<Box<EmbeddingFunction>>,
+    ) -> ChromaCollection {
         ChromaCollection {
             api,
             id,
@@ -28,21 +31,13 @@ impl<T: IEmbeddingFunction> ChromaCollection<T> {
         }
     }
 
-    fn set_name(&mut self, name: String) {
-        self.name = name;
-    }
-
-    fn set_metadata(&mut self, metadata: Option<Value>) {
-        self.metadata = metadata;
-    }
-
     async fn validate<'a>(
         require_embeddings_or_documents: bool,
         ids: Vec<&'a str>,
         embeddings: Option<Vec<Vec<f64>>>,
         metadatas: Option<Vec<Value>>,
         documents: Option<Vec<&'a str>>,
-        embedding_function: Option<impl IEmbeddingFunction>,
+        embedding_function: Option<Box<EmbeddingFunction>>,
     ) -> Result<(Vec<&'a str>, Vec<Vec<f64>>, Vec<Value>, Vec<&'a str>), String> {
         let mut embeddings = embeddings;
         let documents = documents;
@@ -56,7 +51,7 @@ impl<T: IEmbeddingFunction> ChromaCollection<T> {
         if embeddings.is_none() && documents.is_some() {
             let documents_array = documents.clone().unwrap();
             if let Some(embedding_function) = embedding_function {
-                embeddings = Some(embedding_function.generate(documents_array).await);
+                embeddings = Some(embedding_function(documents_array));
             } else {
                 return Err(
                     "EmbeddingFunction is None. Please configure an embedding function".into(),
@@ -131,4 +126,16 @@ impl<T: IEmbeddingFunction> ChromaCollection<T> {
     pub fn peek() {}
 
     pub fn delete() {}
+
+    pub fn id(&self) -> &str {
+        self.id.as_ref()
+    }
+
+    pub fn metadata(&self) -> Option<&Map<String, Value>> {
+        self.metadata.as_ref()
+    }
+
+    pub fn name(&self) -> &str {
+        self.name.as_ref()
+    }
 }
