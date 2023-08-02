@@ -1,9 +1,11 @@
 [package]
 name = "chromadb"
-description = "A Rust client for  ChromaDB. www.trychroma.com/"
 authors = ["Anush008"]
-version = "0.1.0"
+description = "A Rust client for  ChromaDB. www.trychroma.com/"
 edition = "2021"
+license = "https://github.com/Anush008/chromadb-rs/blob/master/LICENSE"
+version = "0.1.0"
+repository = "https://github.com/Anush008/chromadb-rs/"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
