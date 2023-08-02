@@ -1,11 +1,12 @@
-use anyhow::Result;
+use super::commons::Result;
+
 use serde_json::Value;
 use std::collections::HashSet;
 
-use super::{api::APIClient, embeddings::IEmbeddingFunction};
+use super::{api::APIClientV1, embeddings::IEmbeddingFunction};
 
 pub struct ChromaCollection<T: IEmbeddingFunction> {
-    api: APIClient,
+    api: APIClientV1,
     i_embedding_function: Option<T>,
     pub id: String,
     pub metadata: Option<Value>,
@@ -14,7 +15,7 @@ pub struct ChromaCollection<T: IEmbeddingFunction> {
 
 impl<T: IEmbeddingFunction> ChromaCollection<T> {
     fn new(
-        api: APIClient,
+        api: APIClientV1,
         i_embedding_function: Option<T>,
         id: String,
         metadata: Option<Value>,

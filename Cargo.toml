@@ -3,7 +3,7 @@ name = "chromadb"
 authors = ["Anush008"]
 description = "A Rust client for  ChromaDB. www.trychroma.com/"
 edition = "2021"
-license = "https://github.com/Anush008/chromadb-rs/blob/master/LICENSE"
+license = "MIT"
 version = "0.1.0"
 repository = "https://github.com/Anush008/chromadb-rs/"
 
@@ -11,7 +11,11 @@ repository = "https://github.com/Anush008/chromadb-rs/"
 
 [dependencies]
 anyhow = "1.0.72"
-async-trait = "0.1.72"
+async-trait = "0.1"
+
+[dependencies.tokio]
+version = "1"
+features = ["macros"]
 
 [dependencies.reqwest]
 features = ["json"]
@@ -22,4 +26,4 @@ features = ["derive"]
 version = "1"
 
 [dependencies.serde_json]
-version = "1.0.97"
+version = "1"
