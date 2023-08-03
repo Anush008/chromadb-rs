@@ -83,11 +83,18 @@ impl<'a> ChromaClient {
     /// List all collections
     pub async fn list_collections(&self) -> Result<Vec<ChromaCollection>, ChromaAPIError> {
         let response = self.api.get("/collections").await?;
-        let json = response
+        let collections = response
             .json::<Vec<ChromaCollection>>()
             .await
             .map_err(ChromaAPIError::error)?;
-        Ok(json)
+        let collections = collections
+            .into_iter()
+            .map(|mut collection| {
+                collection.api = self.api.clone();
+                collection
+            })
+            .collect();
+        Ok(collections)
     }
 
     /// Get a collection with the given name.

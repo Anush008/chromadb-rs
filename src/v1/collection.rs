@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use serde_json::{Map, Value};
+use serde_json::{json, Map, Value};
 use std::collections::HashSet;
 
 use super::{api::APIClientV1, commons::ChromaAPIError};
@@ -17,22 +17,22 @@ pub struct ChromaCollection {
 
 impl<'a> ChromaCollection {
     async fn _validate(
-        require_embeddings_or_documents: bool,
         ids: Vec<&'a str>,
         embeddings: Option<Vec<Vec<f64>>>,
         metadatas: Option<Vec<Metadata>>,
         documents: Option<Vec<&'a str>>,
-        embedding_function: impl Fn(Vec<&str>) -> Vec<Vec<f64>>,
+        embedding_function: Option<impl Fn(Vec<&str>) -> Vec<Vec<f64>>>,
     ) -> Result<(Vec<&'a str>, Vec<Vec<f64>>, Vec<Metadata>, Vec<&'a str>), String> {
         let mut embeddings = embeddings;
         let documents = documents;
 
-        if require_embeddings_or_documents && embeddings.is_none() && documents.is_none() {
+        if embeddings.is_none() && documents.is_none() {
             return Err("Embeddings and documents cannot both be None".into());
         }
 
-        if embeddings.is_none() && documents.is_some() {
+        if embeddings.is_none() && documents.is_some() && embedding_function.is_some() {
             let documents_array = documents.clone().unwrap();
+            let embedding_function = embedding_function.unwrap();
             embeddings = Some(embedding_function(documents_array));
         }
 
@@ -93,8 +93,18 @@ impl<'a> ChromaCollection {
         Ok(count)
     }
 
-    pub fn modify() {
-        todo!()
+    pub async fn modify(
+        &self,
+        name: Option<&str>,
+        metadata: Option<&Metadata>,
+    ) -> Result<(), ChromaAPIError> {
+        let json_body = json!({
+            "new_name": name,
+            "new_metadata": metadata,
+        });
+        let path = format!("/collections/{}", self.id);
+        self.api.put(&path, Some(json_body)).await?;
+        Ok(())
     }
 
     pub fn get() {
@@ -126,6 +136,8 @@ impl<'a> ChromaCollection {
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     use crate::v1::ChromaClient;
 
     const TEST_COLLECTION: &str = "8-recipies-for-octopus";
@@ -135,9 +147,43 @@ mod tests {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
-            .create_collection(TEST_COLLECTION, None, true)
+            .get_or_create_collection(TEST_COLLECTION, None)
             .await
             .unwrap();
-        assert_eq!(collection.count().await.unwrap(), 0);
+        assert!(collection.count().await.is_ok());
+
+        let collections = client.list_collections().await.unwrap();
+        assert!(collections[0].count().await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_modify_collection() {
+        let client = ChromaClient::new(Default::default());
+
+        let collection = client
+            .get_or_create_collection(TEST_COLLECTION, None)
+            .await
+            .unwrap();
+
+        //Test for setting invalid collection name. Should fail.
+        assert!(collection
+            .modify(Some("new name for test collection"), None)
+            .await
+            .is_err());
+
+        //Test for setting new metadata. Should pass.
+        assert!(collection
+            .modify(
+                None,
+                Some(
+                    json!({
+                        "test": "test"
+                    })
+                    .as_object()
+                    .unwrap()
+                )
+            )
+            .await
+            .is_ok());
     }
 }
