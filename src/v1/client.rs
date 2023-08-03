@@ -1,5 +1,5 @@
 use super::api::APIClientV1;
-use super::collection::Metadata;
+use super::commons::Metadata;
 use super::commons::ChromaAPIError;
 use super::ChromaCollection;
 
@@ -35,7 +35,7 @@ impl<'a> ChromaClient {
     /// # Arguments
     ///
     /// * `name` - The name of the collection to create
-    /// * `metadata` - Optional metadata to associate with the collection
+    /// * `metadata` - Optional metadata to associate with the collection. Must be a JSON object with keys and values that are either numbers, strings or floats.
     /// * `get_or_create` - If true, return the existing collection if it exists
     ///
     /// # Errors
@@ -67,7 +67,7 @@ impl<'a> ChromaClient {
     /// # Arguments
     ///
     /// * `name` - The name of the collection to get or create
-    /// * `metadata` - Optional metadata to associate with the collection
+    /// * `metadata` - Optional metadata to associate with the collection. Must be a JSON object with keys and values that are either numbers, strings or floats.
     ///
     /// # Errors
     ///

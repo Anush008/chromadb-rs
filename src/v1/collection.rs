@@ -1,10 +1,10 @@
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
-use std::collections::HashSet;
 
-use super::{api::APIClientV1, commons::ChromaAPIError};
-
-pub type Metadata = Map<String, Value>;
+use super::{
+    api::APIClientV1,
+    commons::{ChromaAPIError, Documents, Embeddings, Metadata},
+};
 
 #[derive(Deserialize, Debug)]
 pub struct ChromaCollection {
@@ -16,70 +16,19 @@ pub struct ChromaCollection {
 }
 
 impl<'a> ChromaCollection {
-    async fn _validate(
-        ids: Vec<&'a str>,
-        embeddings: Option<Vec<Vec<f64>>>,
-        metadatas: Option<Vec<Metadata>>,
-        documents: Option<Vec<&'a str>>,
-        embedding_function: Option<impl Fn(Vec<&str>) -> Vec<Vec<f64>>>,
-    ) -> Result<(Vec<&'a str>, Vec<Vec<f64>>, Vec<Metadata>, Vec<&'a str>), String> {
-        let mut embeddings = embeddings;
-        let documents = documents;
-
-        if embeddings.is_none() && documents.is_none() {
-            return Err("Embeddings and documents cannot both be None".into());
-        }
-
-        if embeddings.is_none() && documents.is_some() && embedding_function.is_some() {
-            let documents_array = documents.clone().unwrap();
-            let embedding_function = embedding_function.unwrap();
-            embeddings = Some(embedding_function(documents_array));
-        }
-
-        if embeddings.is_none() {
-            return Err("Embeddings is None but shouldn't be".into());
-        }
-
-        let embeddings_array = embeddings.unwrap();
-        let metadatas_array = metadatas.unwrap_or_default();
-        let documents_array = documents.unwrap_or_default();
-
-        for id in &ids {
-            if id.is_empty() {
-                return Err("Found empty string".into());
-            }
-        }
-
-        if embeddings_array.len() != ids.len()
-            || metadatas_array.len() != ids.len()
-            || documents_array.len() != ids.len()
-        {
-            return Err(
-                "IDs, embeddings, metadatas, and documents must all be the same length".into(),
-            );
-        }
-
-        let unique_ids: HashSet<_> = ids.iter().collect();
-        if unique_ids.len() != ids.len() {
-            let duplicate_ids: Vec<_> = ids
-                .iter()
-                .filter(|id| ids.iter().filter(|x| x == id).count() > 1)
-                .collect();
-            return Err(format!(
-                "Expected IDs to be unique, found duplicates for: {:?}",
-                duplicate_ids
-            ));
-        }
-
-        Ok((ids, embeddings_array, metadatas_array, documents_array))
+    // Get the UUID of the collection.
+    pub fn id(&self) -> &str {
+        self.id.as_ref()
     }
 
-    pub fn add() {
-        todo!()
+    // Get the name of the collection.
+    pub fn name(&self) -> &str {
+        self.name.as_ref()
     }
 
-    pub fn upsert() {
-        todo!()
+    // Get the metadata of the collection.
+    pub fn metadata(&self) -> Option<&Map<String, Value>> {
+        self.metadata.as_ref()
     }
 
     /// The total number of embeddings added to the database.
@@ -93,6 +42,16 @@ impl<'a> ChromaCollection {
         Ok(count)
     }
 
+    /// Modify the name/metadata of a collection.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The new name of the collection. Must be unique.
+    /// * `metadata` - The new metadata of the collection. Must be a JSON object with keys and values that are either numbers, strings or floats.
+    ///
+    /// # Errors
+    ///
+    /// * `ChromaAPIError` - If the collection name is invalid
     pub async fn modify(
         &self,
         name: Option<&str>,
@@ -107,8 +66,52 @@ impl<'a> ChromaCollection {
         Ok(())
     }
 
-    pub fn get() {
+    pub fn add() {
         todo!()
+    }
+
+    pub fn upsert() {
+        todo!()
+    }
+
+    /// Get embeddings and their associate data from the data store. If no ids or filter is provided returns all embeddings up to limit starting at offset.
+    ///
+    /// # Arguments
+    ///
+    /// * `ids` - The ids of the embeddings to get. Optional..
+    /// * `where_metadata` - Used to filter results by metadata. E.g. `{ "$and": [{"foo": "bar"}, {"price": {"$gte": 4.20}}] }`. Optional.
+    /// * `limit` - The maximum number of documents to return. Optional.
+    /// * `offset` - The offset to start returning results from. Useful for paging results with limit. Optional.
+    /// * `where_document` - Used to filter by the documents. E.g. {"$contains": "hello"}
+    /// * `include` - A list of what to include in the results. Can contain "embeddings", "metadatas", "documents". Ids are always included. Defaults to ["metadatas", "documents"]. Optional.
+    ///
+    /// # Errors
+    ///
+    /// * `ChromaAPIError` - If the collection name is invalid
+    pub async fn get(
+        &self,
+        ids: Vec<&str>,
+        where_metadata: Option<Value>,
+        limit: Option<usize>,
+        offset: Option<usize>,
+        where_document: Option<Value>,
+        include: Option<Vec<&str>>,
+    ) -> Result<GetResult, ChromaAPIError> {
+        let json_body = json!({
+            "ids": ids,
+            "where": where_metadata,
+            "limit": limit,
+            "offset": offset,
+            "where_document": where_document,
+            "include": include.unwrap_or_default(),
+        });
+        let path = format!("/collections/{}/get", self.id);
+        let response = self.api.post(&path, Some(json_body)).await?;
+        let get_result = response
+            .json::<GetResult>()
+            .await
+            .map_err(ChromaAPIError::error)?;
+        Ok(get_result)
     }
 
     pub fn update() {
@@ -120,18 +123,14 @@ impl<'a> ChromaCollection {
     pub fn peek() {}
 
     pub fn delete() {}
+}
 
-    pub fn id(&self) -> &str {
-        self.id.as_ref()
-    }
-
-    pub fn metadata(&self) -> Option<&Map<String, Value>> {
-        self.metadata.as_ref()
-    }
-
-    pub fn name(&self) -> &str {
-        self.name.as_ref()
-    }
+#[derive(Deserialize, Debug)]
+pub struct GetResult {
+    pub ids: Vec<String>,
+    pub metadatas: Option<Vec<Metadata>>,
+    pub documents: Option<Documents>,
+    pub embeddings: Option<Embeddings>,
 }
 
 #[cfg(test)]
@@ -140,7 +139,7 @@ mod tests {
 
     use crate::v1::ChromaClient;
 
-    const TEST_COLLECTION: &str = "8-recipies-for-octopus";
+    const TEST_COLLECTION: &str = "9-recipies-for-octopus";
 
     #[tokio::test]
     async fn test_create_collection() {
@@ -185,5 +184,22 @@ mod tests {
             )
             .await
             .is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_from_collection() {
+        let client = ChromaClient::new(Default::default());
+
+        let collection = client
+            .get_or_create_collection(TEST_COLLECTION, None)
+            .await
+            .unwrap();
+        assert!(collection.count().await.is_ok());
+
+        let get_result = collection
+            .get(vec![], None, None, None, None, None)
+            .await
+            .unwrap();
+        assert_eq!(get_result.ids.len(), collection.count().await.unwrap());
     }
 }

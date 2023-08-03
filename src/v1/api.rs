@@ -24,11 +24,6 @@ impl APIClientV1 {
             path = path
         );
 
-        let json_body = match json_body {
-            Some(json_body) => serde_json::to_value(json_body).unwrap(),
-            None => Value::Null,
-        };
-
         let res = reqwest::Client::new()
             .post(&url)
             .header(reqwest::header::CONTENT_TYPE, "application/json")

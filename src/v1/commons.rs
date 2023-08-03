@@ -1,6 +1,8 @@
 use std::error::Error;
 use std::fmt;
 
+use serde_json::{Map, Value};
+
 #[derive(Debug)]
 pub struct ChromaAPIError {
     pub message: String,
@@ -21,8 +23,10 @@ impl fmt::Display for ChromaAPIError {
 
 impl Error for ChromaAPIError {}
 
-type _Embedding = Vec<f64>;
+pub type Metadata = Map<String, Value>;
 
-type _Embeddings = Vec<_Embedding>;
+pub type Embedding = Vec<f64>;
 
-type _Documents = Vec<String>;
+pub type Embeddings = Vec<Embedding>;
+
+pub type Documents = Vec<String>;
