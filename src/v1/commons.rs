@@ -21,8 +21,8 @@ impl fmt::Display for ChromaAPIError {
 
 impl Error for ChromaAPIError {}
 
-type Embedding = Vec<f32>;
+type _Embedding = Vec<f64>;
 
-type Embeddings = Vec<Embedding>;
+type _Embeddings = Vec<_Embedding>;
 
-type Documents = Vec<String>;
+type _Documents = Vec<String>;

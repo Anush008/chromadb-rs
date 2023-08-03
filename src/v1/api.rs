@@ -1,14 +1,13 @@
 use super::commons::ChromaAPIError;
 use reqwest::Response;
-use serde::Deserialize;
 use serde_json::Value;
 
-#[derive(Deserialize, Clone, Default)]
-pub(crate) struct APIClientV1 {
-    pub api_endpoint: String,
+#[derive(Clone, Default, Debug)]
+pub(super) struct APIClientV1 {
+    pub(super) api_endpoint: String,
 }
 
-impl<'a> APIClientV1 {
+impl APIClientV1 {
     pub fn new(endpoint: String) -> Self {
         Self {
             api_endpoint: endpoint + "/api/v1",
@@ -19,7 +18,6 @@ impl<'a> APIClientV1 {
         path: &str,
         json_body: Option<Value>,
     ) -> Result<Response, ChromaAPIError> {
-        let client = reqwest::Client::new();
         let url = format!(
             "{api_endpoint}{path}",
             api_endpoint = self.api_endpoint,
@@ -31,7 +29,7 @@ impl<'a> APIClientV1 {
             None => Value::Null,
         };
 
-        let res = client
+        let res = reqwest::Client::new()
             .post(&url)
             .header(reqwest::header::CONTENT_TYPE, "application/json")
             .json(&json_body)
@@ -50,13 +48,12 @@ impl<'a> APIClientV1 {
     }
 
     pub async fn get(&self, path: &str) -> Result<Response, ChromaAPIError> {
-        let client = reqwest::Client::new();
         let url = format!(
             "{api_endpoint}{path}",
             api_endpoint = self.api_endpoint,
             path = path
         );
-        let res = client.get(&url).send().await;
+        let res = reqwest::get(&url).await;
         match res {
             Ok(res) => match res.status().is_success() {
                 true => Ok(res),
@@ -69,13 +66,12 @@ impl<'a> APIClientV1 {
     }
 
     pub async fn delete(&self, path: &str) -> Result<Response, ChromaAPIError> {
-        let client = reqwest::Client::new();
         let url = format!(
             "{api_endpoint}{path}",
             api_endpoint = self.api_endpoint,
             path = path
         );
-        let res = client.delete(&url).send().await;
+        let res = reqwest::Client::new().delete(&url).send().await;
         match res {
             Ok(res) => match res.status().is_success() {
                 true => Ok(res),

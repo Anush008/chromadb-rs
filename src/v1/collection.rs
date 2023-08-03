@@ -1,36 +1,22 @@
 use serde::Deserialize;
 use serde_json::{Map, Value};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
-use super::api::APIClientV1;
+use super::{api::APIClientV1, commons::ChromaAPIError};
 
 pub type Metadata = Map<String, Value>;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct ChromaCollection {
-    #[serde(skip_deserializing)]
-    api: APIClientV1,
+    #[serde(skip)]
+    pub(super) api: APIClientV1,
     pub(super) id: String,
     pub(super) metadata: Option<Metadata>,
     pub(super) name: String,
 }
 
-impl ChromaCollection {
-    pub(crate) fn new(
-        name: String,
-        id: String,
-        metadata: Option<Metadata>,
-        api: APIClientV1,
-    ) -> ChromaCollection {
-        ChromaCollection {
-            api,
-            id,
-            metadata,
-            name,
-        }
-    }
-
-    async fn validate<'a>(
+impl<'a> ChromaCollection {
+    async fn _validate(
         require_embeddings_or_documents: bool,
         ids: Vec<&'a str>,
         embeddings: Option<Vec<Vec<f64>>>,
@@ -41,10 +27,8 @@ impl ChromaCollection {
         let mut embeddings = embeddings;
         let documents = documents;
 
-        if require_embeddings_or_documents {
-            if embeddings.is_none() && documents.is_none() {
-                return Err("Embeddings and documents cannot both be None".into());
-            }
+        if require_embeddings_or_documents && embeddings.is_none() && documents.is_none() {
+            return Err("Embeddings and documents cannot both be None".into());
         }
 
         if embeddings.is_none() && documents.is_some() {
@@ -98,8 +82,15 @@ impl ChromaCollection {
         todo!()
     }
 
-    pub fn count() {
-        todo!()
+    /// The total number of embeddings added to the database.
+    pub async fn count(&self) -> Result<usize, ChromaAPIError> {
+        let path = format!("/collections/{}/count", self.id);
+        let response = self.api.get(&path).await?;
+        let count = response
+            .json::<usize>()
+            .await
+            .map_err(ChromaAPIError::error)?;
+        Ok(count)
     }
 
     pub fn modify() {
@@ -130,5 +121,23 @@ impl ChromaCollection {
 
     pub fn name(&self) -> &str {
         self.name.as_ref()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::v1::ChromaClient;
+
+    const TEST_COLLECTION: &str = "8-recipies-for-octopus";
+
+    #[tokio::test]
+    async fn test_create_collection() {
+        let client = ChromaClient::new(Default::default());
+
+        let collection = client
+            .create_collection(TEST_COLLECTION, None, true)
+            .await
+            .unwrap();
+        assert_eq!(collection.count().await.unwrap(), 0);
     }
 }
