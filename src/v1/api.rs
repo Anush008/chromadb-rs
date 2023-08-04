@@ -1,4 +1,4 @@
-use super::commons::ChromaAPIError;
+use super::commons::Result;
 use reqwest::Response;
 use serde_json::Value;
 
@@ -13,11 +13,7 @@ impl APIClientV1 {
             api_endpoint: endpoint + "/api/v1",
         }
     }
-    pub async fn post(
-        &self,
-        path: &str,
-        json_body: Option<Value>,
-    ) -> Result<Response, ChromaAPIError> {
+    pub async fn post(&self, path: &str, json_body: Option<Value>) -> Result<Response> {
         let url = format!(
             "{api_endpoint}{path}",
             api_endpoint = self.api_endpoint,
@@ -33,16 +29,13 @@ impl APIClientV1 {
         match res {
             Ok(res) => match res.status().is_success() {
                 true => Ok(res),
-                false => {
-                    let message = format!("{}: {}", res.status(), res.text().await.unwrap());
-                    Err(ChromaAPIError { message })
-                }
+                false => anyhow::bail!("{}: {}", res.status(), res.text().await.unwrap()),
             },
-            Err(e) => Err(ChromaAPIError::error(e)),
+            Err(e) => Err(e.into()),
         }
     }
 
-    pub async fn get(&self, path: &str) -> Result<Response, ChromaAPIError> {
+    pub async fn get(&self, path: &str) -> Result<Response> {
         let url = format!(
             "{api_endpoint}{path}",
             api_endpoint = self.api_endpoint,
@@ -52,19 +45,13 @@ impl APIClientV1 {
         match res {
             Ok(res) => match res.status().is_success() {
                 true => Ok(res),
-                false => Err(ChromaAPIError {
-                    message: format!("{}: {}", res.status(), res.text().await.unwrap()),
-                }),
+                false => anyhow::bail!("{}: {}", res.status(), res.text().await.unwrap()),
             },
-            Err(e) => Err(ChromaAPIError::error(e)),
+            Err(e) => Err(e.into()),
         }
     }
 
-    pub async fn put(
-        &self,
-        path: &str,
-        json_body: Option<Value>,
-    ) -> Result<Response, ChromaAPIError> {
+    pub async fn put(&self, path: &str, json_body: Option<Value>) -> Result<Response> {
         let url = format!(
             "{api_endpoint}{path}",
             api_endpoint = self.api_endpoint,
@@ -85,16 +72,13 @@ impl APIClientV1 {
         match res {
             Ok(res) => match res.status().is_success() {
                 true => Ok(res),
-                false => {
-                    let message = format!("{}: {}", res.status(), res.text().await.unwrap());
-                    Err(ChromaAPIError { message })
-                }
+                false => anyhow::bail!("{}: {}", res.status(), res.text().await.unwrap()),
             },
-            Err(e) => Err(ChromaAPIError::error(e)),
+            Err(e) => Err(e.into()),
         }
     }
 
-    pub async fn delete(&self, path: &str) -> Result<Response, ChromaAPIError> {
+    pub async fn delete(&self, path: &str) -> Result<Response> {
         let url = format!(
             "{api_endpoint}{path}",
             api_endpoint = self.api_endpoint,
@@ -104,11 +88,9 @@ impl APIClientV1 {
         match res {
             Ok(res) => match res.status().is_success() {
                 true => Ok(res),
-                false => Err(ChromaAPIError {
-                    message: format!("{}: {}", res.status(), res.text().await.unwrap()),
-                }),
+                false => anyhow::bail!("{}: {}", res.status(), res.text().await.unwrap()),
             },
-            Err(e) => Err(ChromaAPIError::error(e)),
+            Err(e) => Err(e.into()),
         }
     }
 }

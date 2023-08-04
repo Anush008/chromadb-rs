@@ -1,18 +1,19 @@
-use std::collections::HashSet;
-
+use anyhow::bail;
 use serde::Deserialize;
-use serde_json::{json, Map, Value};
+use serde_json::{json, Value};
+use std::{collections::HashSet, sync::Arc};
 
 use super::{
     api::APIClientV1,
-    commons::{ChromaAPIError, Documents, Embeddings, Metadata, Metadatas},
+    commons::{Documents, Embeddings, Metadata, Metadatas, Result},
     embeddings::EmbeddingFunction,
 };
 
+/// A collection representation for interacting with the associated ChromaDB collection.
 #[derive(Deserialize, Debug)]
 pub struct ChromaCollection {
     #[serde(skip)]
-    pub(super) api: APIClientV1,
+    pub(super) api: Arc<APIClientV1>,
     pub(super) id: String,
     pub(super) metadata: Option<Metadata>,
     pub(super) name: String,
@@ -30,18 +31,15 @@ impl ChromaCollection {
     }
 
     /// Get the metadata of the collection.
-    pub fn metadata(&self) -> Option<&Map<String, Value>> {
+    pub fn metadata(&self) -> Option<&Metadata> {
         self.metadata.as_ref()
     }
 
     /// The total number of embeddings added to the database.
-    pub async fn count(&self) -> Result<usize, ChromaAPIError> {
+    pub async fn count(&self) -> Result<usize> {
         let path = format!("/collections/{}/count", self.id);
         let response = self.api.get(&path).await?;
-        let count = response
-            .json::<usize>()
-            .await
-            .map_err(ChromaAPIError::error)?;
+        let count = response.json::<usize>().await?;
         Ok(count)
     }
 
@@ -54,12 +52,8 @@ impl ChromaCollection {
     ///
     /// # Errors
     ///
-    /// * `ChromaAPIError` - If the collection name is invalid
-    pub async fn modify(
-        &self,
-        name: Option<&str>,
-        metadata: Option<&Metadata>,
-    ) -> Result<(), ChromaAPIError> {
+    /// * If the collection name is invalid
+    pub async fn modify(&self, name: Option<&str>, metadata: Option<&Metadata>) -> Result<()> {
         let json_body = json!({
             "new_name": name,
             "new_metadata": metadata,
@@ -81,13 +75,13 @@ impl ChromaCollection {
     ///
     /// # Errors
     ///
-    /// * `ChromaAPIError` - If you don't provide either embeddings or documents
-    /// * `ChromaAPIError` - If the length of ids, embeddings, metadatas, or documents don't match
-    /// * `ChromaAPIError` - If you provide duplicates in ids
-    /// * `ChromaAPIError` - If you provide empty ids
-    /// * `ChromaAPIError` - If you provide documents and don't provide an embedding function when embeddings is None
-    /// * `ChromaAPIError` - If you provide an embedding function and don't provide documents
-    /// * `ChromaAPIError` - If you provide both embeddings and embedding_function
+    /// * If you don't provide either embeddings or documents
+    /// * If the length of ids, embeddings, metadatas, or documents don't match
+    /// * If you provide duplicates in ids
+    /// * If you provide empty ids
+    /// * If you provide documents and don't provide an embedding function when embeddings is None
+    /// * If you provide an embedding function and don't provide documents
+    /// * If you provide both embeddings and embedding_function
     ///
     pub async fn add(
         &self,
@@ -96,7 +90,7 @@ impl ChromaCollection {
         metadatas: Option<Metadatas>,
         documents: Option<Documents>,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
-    ) -> Result<bool, ChromaAPIError> {
+    ) -> Result<bool> {
         let (ids, embeddings, metadata, documents) = validate(
             true,
             ids,
@@ -116,10 +110,7 @@ impl ChromaCollection {
 
         let path = format!("/collections/{}/add", self.id);
         let response = self.api.post(&path, Some(json_body)).await?;
-        let response = response
-            .json::<bool>()
-            .await
-            .map_err(ChromaAPIError::error)?;
+        let response = response.json::<bool>().await?;
 
         Ok(response)
     }
@@ -136,13 +127,13 @@ impl ChromaCollection {
     ///
     /// # Errors
     ///
-    /// * `ChromaAPIError` - If you don't provide either embeddings or documents
-    /// * `ChromaAPIError` - If the length of ids, embeddings, metadatas, or documents don't match
-    /// * `ChromaAPIError` - If you provide duplicates in ids
-    /// * `ChromaAPIError` - If you provide empty ids
-    /// * `ChromaAPIError` - If you provide documents and don't provide an embedding function when embeddings is None
-    /// * `ChromaAPIError` - If you provide an embedding function and don't provide documents
-    /// * `ChromaAPIError` - If you provide both embeddings and embedding_function
+    /// * If you don't provide either embeddings or documents
+    /// * If the length of ids, embeddings, metadatas, or documents don't match
+    /// * If you provide duplicates in ids
+    /// * If you provide empty ids
+    /// * If you provide documents and don't provide an embedding function when embeddings is None
+    /// * If you provide an embedding function and don't provide documents
+    /// * If you provide both embeddings and embedding_function
     ///
     pub async fn upsert(
         &self,
@@ -151,7 +142,7 @@ impl ChromaCollection {
         metadatas: Option<Metadatas>,
         documents: Option<Documents>,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
-    ) -> Result<bool, ChromaAPIError> {
+    ) -> Result<bool> {
         let (ids, embeddings, metadata, documents) = validate(
             true,
             ids,
@@ -171,10 +162,7 @@ impl ChromaCollection {
 
         let path = format!("/collections/{}/upsert", self.id);
         let response = self.api.post(&path, Some(json_body)).await?;
-        let response = response
-            .json::<bool>()
-            .await
-            .map_err(ChromaAPIError::error)?;
+        let response = response.json::<bool>().await?;
 
         Ok(response)
     }
@@ -184,15 +172,15 @@ impl ChromaCollection {
     /// # Arguments
     ///
     /// * `ids` - The ids of the embeddings to get. Optional..
-    /// * `where_metadata` - Used to filter results by metadata. E.g. `{ "$and": [{"foo": "bar"}, {"price": {"$gte": 4.20}}] }`. Optional.
+    /// * `where_metadata` - Used to filter results by metadata. E.g. `{ "$and": [{"foo": "bar"}, {"price": {"$gte": 4.20}}] }`. See <https://docs.trychroma.com/usage-guide#filtering-by-metadata> for more information on metadata filters. Optional.
     /// * `limit` - The maximum number of documents to return. Optional.
     /// * `offset` - The offset to start returning results from. Useful for paging results with limit. Optional.
-    /// * `where_document` - Used to filter by the documents. E.g. {"$contains": "hello"}
-    /// * `include` - A list of what to include in the results. Can contain "embeddings", "metadatas", "documents". Ids are always included. Defaults to ["metadatas", "documents"]. Optional.
+    /// * `where_document` - Used to filter by the documents. E.g. {"$contains": "hello"}. See <https://docs.trychroma.com/usage-guide#filtering-by-document-contents> for more information on document content filters. Optional.
+    /// * `include` - A list of what to include in the results. Can contain `"embeddings"`, `"metadatas"`, `"documents"`. Ids are always included. Defaults to `["metadatas", "documents"]`. Optional.
     ///
     /// # Errors
     ///
-    /// * `ChromaAPIError` - If the collection name is invalid
+    /// * If the collection name is invalid
     pub async fn get(
         &self,
         ids: Vec<&str>,
@@ -201,7 +189,7 @@ impl ChromaCollection {
         offset: Option<usize>,
         where_document: Option<Value>,
         include: Option<Vec<&str>>,
-    ) -> Result<GetResult, ChromaAPIError> {
+    ) -> Result<GetResult> {
         let json_body = json!({
             "ids": ids,
             "where": where_metadata,
@@ -212,10 +200,7 @@ impl ChromaCollection {
         });
         let path = format!("/collections/{}/get", self.id);
         let response = self.api.post(&path, Some(json_body)).await?;
-        let get_result = response
-            .json::<GetResult>()
-            .await
-            .map_err(ChromaAPIError::error)?;
+        let get_result = response.json::<GetResult>().await?;
         Ok(get_result)
     }
 
@@ -231,12 +216,12 @@ impl ChromaCollection {
     ///
     /// # Errors
     ///
-    /// * `ChromaAPIError` - If the length of ids, embeddings, metadatas, or documents don't match
-    /// * `ChromaAPIError` - If you provide duplicates in ids
-    /// * `ChromaAPIError` - If you provide empty ids
-    /// * `ChromaAPIError` - If you provide documents and don't provide an embedding function when embeddings is None
-    /// * `ChromaAPIError` - If you provide an embedding function and don't provide documents
-    /// * `ChromaAPIError` - If you provide both embeddings and embedding_function
+    /// * If the length of ids, embeddings, metadatas, or documents don't match
+    /// * If you provide duplicates in ids
+    /// * If you provide empty ids
+    /// * If you provide documents and don't provide an embedding function when embeddings is None
+    /// * If you provide an embedding function and don't provide documents
+    /// * If you provide both embeddings and embedding_function
     ///
     pub async fn update(
         &self,
@@ -245,7 +230,7 @@ impl ChromaCollection {
         metadatas: Option<Metadatas>,
         documents: Option<Documents>,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
-    ) -> Result<bool, ChromaAPIError> {
+    ) -> Result<bool> {
         let (ids, embeddings, metadata, documents) = validate(
             false,
             ids,
@@ -265,10 +250,7 @@ impl ChromaCollection {
 
         let path = format!("/collections/{}/update", self.id);
         let response = self.api.post(&path, Some(json_body)).await?;
-        let response = response
-            .json::<bool>()
-            .await
-            .map_err(ChromaAPIError::error)?;
+        let response = response.json::<bool>().await?;
 
         Ok(response)
     }
@@ -295,23 +277,19 @@ async fn validate(
     metadata: Option<Metadatas>,
     documents: Option<Documents>,
     embedding_function: Option<Box<dyn EmbeddingFunction>>,
-) -> Result<(Vec<&str>, Embeddings, Option<Metadatas>, Option<Documents>), ChromaAPIError> {
+) -> Result<(Vec<&str>, Embeddings, Option<Metadatas>, Option<Documents>)> {
     if require_embeddings_or_documents && embeddings.is_none() && documents.is_none() {
-        return Err(ChromaAPIError::error(
-            "Embeddings and documents cannot both be None",
-        ));
+        bail!("Embeddings and documents cannot both be None",);
     }
 
     if embeddings.is_none() && documents.is_some() && embedding_function.is_none() {
-        return Err(ChromaAPIError::error(
+        bail!(
             "embedding_function cannot be None if documents are provided and embeddings are None",
-        ));
+        );
     }
 
     if embeddings.is_some() && embedding_function.is_some() {
-        return Err(ChromaAPIError::error(
-            "embedding_function should be None if embeddings are provided",
-        ));
+        bail!("embedding_function should be None if embeddings are provided",);
     }
 
     let mut embeddingss = Vec::new();
@@ -324,7 +302,7 @@ async fn validate(
 
     for id in &ids {
         if id.is_empty() {
-            return Err(ChromaAPIError::error("Found empty string in IDs"));
+            bail!("Found empty string in IDs");
         }
     }
 
@@ -332,9 +310,7 @@ async fn validate(
         || (metadata.is_some() && metadata.as_ref().unwrap().len() != ids.len())
         || (documents.is_some() && documents.as_ref().unwrap().len() != ids.len())
     {
-        return Err(ChromaAPIError::error(
-            "IDs, embeddings, metadatas, and documents must all be the same length",
-        ));
+        bail!("IDs, embeddings, metadatas, and documents must all be the same length",);
     }
 
     let unique_ids: HashSet<_> = ids.iter().collect();
@@ -343,10 +319,10 @@ async fn validate(
             .iter()
             .filter(|id| ids.iter().filter(|x| x == id).count() > 1)
             .collect();
-        return Err(ChromaAPIError::error(format!(
+        bail!(
             "Expected IDs to be unique, found duplicates for: {:?}",
             duplicate_ids
-        )));
+        );
     }
     Ok((ids, embeddingss, metadata, documents))
 }
@@ -439,7 +415,6 @@ mod tests {
                 Some(Box::new(MockEmbeddingProvider)),
             )
             .await;
-        dbg!(&response);
         assert!(
             response.is_err(),
             "Embeddings and documents cannot both be None"
