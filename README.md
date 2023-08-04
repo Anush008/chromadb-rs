@@ -93,6 +93,7 @@ let get_query = GetQuery {
      where_document: Some(where_document),
      include: Some(vec!["documents".into(),"embeddings".into()])
  };
+ 
 let get_result: GetResult = collection.get(get_query).await?;
 println!("Get result: {:?}", get_result);
 

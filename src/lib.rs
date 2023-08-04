@@ -7,7 +7,7 @@
 //! You can connect to ChromaDB by instantiating a [ChromaClient](crate::v1::ChromaClient)
 //! ```
 //! use chromadb::v1::client::{ChromaClient, ChromaClientOptions};
-//! use chromadb::v1::collection::{ChromaCollection, GetResult, GetQuery};
+//! use chromadb::v1::collection::{ChromaCollection, GetResult, GetOptions};
 //! use serde_json::json;
 //!
 //!# async fn doc_client_demo() -> anyhow::Result<()> {
@@ -27,7 +27,7 @@
 //!
 //! ```
 //!# use chromadb::v1::ChromaClient;
-//!# use chromadb::v1::collection::{ChromaCollection, GetResult, CollectionEntries, GetQuery};
+//!# use chromadb::v1::collection::{ChromaCollection, GetResult, CollectionEntries, GetOptions};
 //!# use serde_json::json;
 //!# async fn doc_client_create_collection(client: &ChromaClient) -> anyhow::Result<()> {
 //! // Get or create a collection with the given name and no metadata.
@@ -59,7 +59,7 @@
 //! // Get embeddings from a collection with filters and limit set to 1.
 //! // An empty IDs vec will return all embeddings.
 //!
-//! let get_query = GetQuery {
+//! let get_query = GetOptions {
 //!     ids: vec![],
 //!     where_metadata: None,
 //!     limit: Some(1),

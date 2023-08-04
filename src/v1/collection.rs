@@ -5,7 +5,7 @@ use std::{collections::HashSet, sync::Arc, vec};
 
 use super::{
     api::APIClientV1,
-    commons::{Documents, Embeddings, Metadata, Metadatas, Result},
+    commons::{Documents, Embedding, Embeddings, Metadata, Metadatas, Result},
     embeddings::EmbeddingFunction,
 };
 
@@ -168,23 +168,29 @@ impl ChromaCollection {
     /// * `where_document` - Used to filter by the documents. E.g. {"$contains": "hello"}. See <https://docs.trychroma.com/usage-guide#filtering-by-document-contents> for more information on document content filters. Optional.
     /// * `include` - A list of what to include in the results. Can contain `"embeddings"`, `"metadatas"`, `"documents"`. Ids are always included. Defaults to `["metadatas", "documents"]`. Optional.
     ///
-    pub async fn get(&self, get_query: GetQuery) -> Result<GetResult> {
-        let GetQuery {
+    pub async fn get(&self, get_options: GetOptions) -> Result<GetResult> {
+        let GetOptions {
             ids,
             where_metadata,
             limit,
             offset,
             where_document,
             include,
-        } = get_query;
-        let json_body = json!({
+        } = get_options;
+        let mut json_body = json!({
             "ids": ids,
             "where": where_metadata,
             "limit": limit,
             "offset": offset,
             "where_document": where_document,
-            "include": include.unwrap_or_default(), //Include cannot be null
+            "include": include
         });
+
+        json_body
+            .as_object_mut()
+            .unwrap()
+            .retain(|_, v| !v.is_null());
+
         let path = format!("/collections/{}/get", self.id);
         let response = self.api.post(&path, Some(json_body)).await?;
         let get_result = response.json::<GetResult>().await?;
@@ -237,7 +243,70 @@ impl ChromaCollection {
         Ok(response)
     }
 
-    pub fn query() {}
+    ///Get the n_results nearest neighbor embeddings for provided query_embeddings or query_texts.
+    ///
+    /// # Arguments
+    ///
+    /// * `query_embeddings` - The embeddings to get the closest neighbors of. Optional.
+    /// * `query_texts` -  The document texts to get the closest neighbors of. Optional.
+    /// * `n_results` - The number of neighbors to return for each query_embedding or query_texts. Optional.
+    /// * `where_metadata` - Used to filter results by metadata. E.g. {"$and": ["color" : "red", "price": {"$gte": 4.20}]}. Optional.
+    /// * `where_document` - Used to filter results by documents. E.g. {$contains: "some text"}. Optional.
+    /// * `include` - A list of what to include in the results. Can contain "embeddings", "metadatas", "documents", "distances". Ids are always included. Defaults to ["metadatas", "documents", "distances"]. Optional.
+    /// * `embedding_function` - The function to use to compute the embeddings. If None, embeddings must be provided. Optional.
+    ///
+    /// # Errors
+    ///
+    /// * If you don't provide either query_embeddings or query_texts
+    /// * If you provide both query_embeddings and query_texts
+    /// * If you provide query_texts and don't provide an embedding function when embeddings is None
+    ///
+    pub async fn query(
+        &self,
+        query_options: QueryOptions,
+        embedding_function: Option<Box<dyn EmbeddingFunction>>,
+    ) -> Result<QueryResult> {
+        let QueryOptions {
+            mut query_embeddings,
+            query_texts,
+            n_results,
+            where_metadata,
+            where_document,
+            include,
+        } = query_options;
+        if query_embeddings.is_some() && query_texts.is_some() {
+            bail!("You can only provide query_embeddings or query_texts, not both");
+        } else if query_embeddings.is_none() && query_texts.is_none() {
+            bail!("You must provide either query_embeddings or query_texts");
+        } else if query_texts.is_some() && embedding_function.is_none() {
+            bail!("You must provide an embedding function when providing query_texts");
+        } else if query_embeddings.is_none() && embedding_function.is_some() {
+            query_embeddings = Some(
+                embedding_function
+                    .unwrap()
+                    .embed(query_texts.as_ref().unwrap())
+                    .await,
+            );
+        };
+
+        let mut json_body = json!({
+            "query_embeddings": query_embeddings,
+            "n_results": n_results,
+            "where": where_metadata,
+            "where_document": where_document,
+            "include": include
+        });
+
+        json_body
+            .as_object_mut()
+            .unwrap()
+            .retain(|_, v| !v.is_null());
+
+        let path = format!("/collections/{}/query", self.id);
+        let response = self.api.post(&path, Some(json_body)).await?;
+        let query_result = response.json::<QueryResult>().await?;
+        Ok(query_result)
+    }
 
     ///Get the first entries in the collection up to the limit
     ///
@@ -246,7 +315,7 @@ impl ChromaCollection {
     /// * `limit` - The number of entries to return.
     ///
     pub async fn peek(&self, limit: usize) -> Result<GetResult> {
-        let get_query = GetQuery {
+        let get_query = GetOptions {
             ids: vec![],
             where_metadata: None,
             limit: Some(limit),
@@ -288,18 +357,36 @@ impl ChromaCollection {
 #[derive(Deserialize, Debug)]
 pub struct GetResult {
     pub ids: Vec<String>,
-    pub metadatas: Option<Vec<Metadata>>,
-    pub documents: Option<Documents>,
-    pub embeddings: Option<Embeddings>,
+    pub metadatas: Option<Vec<Option<Vec<Option<Metadata>>>>>,
+    pub documents: Option<Vec<Option<String>>>,
+    pub embeddings: Option<Vec<Option<Embedding>>>,
 }
 
-pub struct GetQuery {
+pub struct GetOptions {
     pub ids: Vec<String>,
     pub where_metadata: Option<Value>,
     pub limit: Option<usize>,
     pub offset: Option<usize>,
     pub where_document: Option<Value>,
     pub include: Option<Vec<String>>,
+}
+
+pub struct QueryOptions {
+    pub query_embeddings: Option<Embeddings>,
+    pub query_texts: Option<Vec<String>>,
+    pub n_results: Option<usize>,
+    pub where_metadata: Option<Value>,
+    pub where_document: Option<Value>,
+    pub include: Option<Vec<String>>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct QueryResult {
+    pub ids: Vec<Vec<String>>,
+    pub metadatas: Option<Vec<Option<Vec<Option<Metadata>>>>>,
+    pub documents: Option<Vec<Option<Vec<Option<String>>>>>,
+    pub embeddings: Option<Vec<Option<Vec<Embedding>>>>,
+    pub distances: Option<Vec<Option<Vec<f32>>>>,
 }
 
 pub struct CollectionEntries {
@@ -338,7 +425,7 @@ async fn validate(
         embeddings = Some(
             embedding_function
                 .unwrap()
-                .embed(&documents.as_ref().unwrap())
+                .embed(documents.as_ref().unwrap())
                 .await,
         );
     }
@@ -380,7 +467,7 @@ mod tests {
     use serde_json::json;
 
     use crate::v1::{
-        collection::{CollectionEntries, GetQuery},
+        collection::{CollectionEntries, GetOptions, QueryOptions},
         embeddings::MockEmbeddingProvider,
         ChromaClient,
     };
@@ -442,7 +529,7 @@ mod tests {
             .unwrap();
         assert!(collection.count().await.is_ok());
 
-        let get_query = GetQuery {
+        let get_query = GetOptions {
             ids: vec![],
             where_metadata: None,
             limit: None,
@@ -847,6 +934,83 @@ mod tests {
         assert!(
             response.is_ok(),
             "Embeddings are computed by the embedding_function if embeddings are None and documents are provided"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_query_collection() {
+        let client = ChromaClient::new(Default::default());
+
+        let collection = client
+            .get_or_create_collection(TEST_COLLECTION, None)
+            .await
+            .unwrap();
+        assert!(collection.count().await.is_ok());
+
+        let query = QueryOptions {
+            query_texts: None,
+            query_embeddings: None,
+            where_metadata: None,
+            where_document: None,
+            n_results: None,
+            include: None,
+        };
+        let query_result = collection.query(query, None).await;
+        assert!(
+            query_result.is_err(),
+            "query_texts and query_embeddings cannot both be None"
+        );
+
+        let query = QueryOptions {
+            query_texts: Some(vec![
+                "Writing tests help me find bugs".into(),
+                "Running them does not".into(),
+            ]),
+            query_embeddings: None,
+            where_metadata: None,
+            where_document: None,
+            n_results: None,
+            include: None,
+        };
+        let query_result = collection
+            .query(query, Some(Box::new(MockEmbeddingProvider)))
+            .await;
+        assert!(
+            query_result.is_ok(),
+            "query_embeddings will be computed from query_texts if embedding_function is provided"
+        );
+
+        let query = QueryOptions {
+            query_texts: Some(vec![
+                "Writing tests help me find bugs".into(),
+                "Running them does not".into(),
+            ]),
+            query_embeddings: Some(vec![vec![0.0_f64; 768], vec![0.0_f64; 768]]),
+            where_metadata: None,
+            where_document: None,
+            n_results: None,
+            include: None,
+        };
+        let query_result = collection
+            .query(query, Some(Box::new(MockEmbeddingProvider)))
+            .await;
+        assert!(
+            query_result.is_err(),
+            "Both query_embeddings and query_texts cannot be provided"
+        );
+
+        let query = QueryOptions {
+            query_texts: None,
+            query_embeddings: Some(vec![vec![0.0_f64; 768], vec![0.0_f64; 768]]),
+            where_metadata: None,
+            where_document: None,
+            n_results: None,
+            include: None,
+        };
+        let query_result = collection.query(query, None).await;
+        assert!(
+            query_result.is_ok(),
+            "Use provided query_embeddings if embedding_function is None"
         );
     }
 }
