@@ -1,5 +1,5 @@
-use std::error::Error;
-use std::fmt;
+use std::fmt::{self, Debug};
+use std::{error::Error, fmt::Display};
 
 use serde_json::{Map, Value};
 
@@ -9,7 +9,7 @@ pub struct ChromaAPIError {
 }
 
 impl ChromaAPIError {
-    pub fn error<E: Error>(e: E) -> ChromaAPIError {
+    pub fn error<E: Display>(e: E) -> ChromaAPIError {
         ChromaAPIError {
             message: e.to_string(),
         }
@@ -24,6 +24,8 @@ impl fmt::Display for ChromaAPIError {
 impl Error for ChromaAPIError {}
 
 pub type Metadata = Map<String, Value>;
+
+pub type Metadatas = Vec<Metadata>;
 
 pub type Embedding = Vec<f64>;
 

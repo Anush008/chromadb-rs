@@ -4,8 +4,11 @@ authors = ["Anush008"]
 description = "A Rust client for  ChromaDB. www.trychroma.com/"
 edition = "2021"
 license = "MIT"
-version = "0.1.5"
+version = "0.1.6"
 repository = "https://github.com/Anush008/chromadb-rs/"
+
+[dependencies]
+async-trait = "0.1.72"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

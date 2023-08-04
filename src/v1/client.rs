@@ -1,6 +1,6 @@
 use super::api::APIClientV1;
-use super::commons::Metadata;
 use super::commons::ChromaAPIError;
+use super::commons::Metadata;
 use super::ChromaCollection;
 
 use serde::Deserialize;
