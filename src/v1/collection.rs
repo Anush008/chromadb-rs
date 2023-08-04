@@ -36,10 +36,10 @@ impl ChromaCollection {
     }
 
     /// The total number of embeddings added to the database.
-    pub async fn count(&self) -> Result<usize> {
+    pub fn count(&self) -> Result<usize> {
         let path = format!("/collections/{}/count", self.id);
-        let response = self.api.get(&path).await?;
-        let count = response.json::<usize>().await?;
+        let response = self.api.get(&path)?;
+        let count = response.json::<usize>()?;
         Ok(count)
     }
 
@@ -53,13 +53,13 @@ impl ChromaCollection {
     /// # Errors
     ///
     /// * If the collection name is invalid
-    pub async fn modify(&self, name: Option<&str>, metadata: Option<&Metadata>) -> Result<()> {
+    pub fn modify(&self, name: Option<&str>, metadata: Option<&Metadata>) -> Result<()> {
         let json_body = json!({
             "new_name": name,
             "new_metadata": metadata,
         });
         let path = format!("/collections/{}", self.id);
-        self.api.put(&path, Some(json_body)).await?;
+        self.api.put(&path, Some(json_body))?;
         Ok(())
     }
 
@@ -82,12 +82,12 @@ impl ChromaCollection {
     /// * If you provide an embedding function and don't provide documents
     /// * If you provide both embeddings and embedding_function
     ///
-    pub async fn add(
+    pub fn add(
         &self,
         collection_entries: CollectionEntries,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
     ) -> Result<bool> {
-        let collection_entries = validate(true, collection_entries, embedding_function).await?;
+        let collection_entries = validate(true, collection_entries, embedding_function)?;
 
         let CollectionEntries {
             ids,
@@ -104,8 +104,8 @@ impl ChromaCollection {
         });
 
         let path = format!("/collections/{}/add", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
-        let response = response.json::<bool>().await?;
+        let response = self.api.post(&path, Some(json_body))?;
+        let response = response.json::<bool>()?;
 
         Ok(response)
     }
@@ -129,12 +129,12 @@ impl ChromaCollection {
     /// * If you provide an embedding function and don't provide documents
     /// * If you provide both embeddings and embedding_function
     ///
-    pub async fn upsert(
+    pub fn upsert(
         &self,
         collection_entries: CollectionEntries,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
     ) -> Result<bool> {
-        let collection_entries = validate(true, collection_entries, embedding_function).await?;
+        let collection_entries = validate(true, collection_entries, embedding_function)?;
 
         let CollectionEntries {
             ids,
@@ -151,8 +151,8 @@ impl ChromaCollection {
         });
 
         let path = format!("/collections/{}/upsert", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
-        let response = response.json::<bool>().await?;
+        let response = self.api.post(&path, Some(json_body))?;
+        let response = response.json::<bool>()?;
 
         Ok(response)
     }
@@ -168,7 +168,7 @@ impl ChromaCollection {
     /// * `where_document` - Used to filter by the documents. E.g. {"$contains": "hello"}. See <https://docs.trychroma.com/usage-guide#filtering-by-document-contents> for more information on document content filters. Optional.
     /// * `include` - A list of what to include in the results. Can contain `"embeddings"`, `"metadatas"`, `"documents"`. Ids are always included. Defaults to `["metadatas", "documents"]`. Optional.
     ///
-    pub async fn get(&self, get_options: GetOptions) -> Result<GetResult> {
+    pub fn get(&self, get_options: GetOptions) -> Result<GetResult> {
         let GetOptions {
             ids,
             where_metadata,
@@ -192,8 +192,8 @@ impl ChromaCollection {
             .retain(|_, v| !v.is_null());
 
         let path = format!("/collections/{}/get", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
-        let get_result = response.json::<GetResult>().await?;
+        let response = self.api.post(&path, Some(json_body))?;
+        let get_result = response.json::<GetResult>()?;
         Ok(get_result)
     }
 
@@ -215,12 +215,12 @@ impl ChromaCollection {
     /// * If you provide an embedding function and don't provide documents
     /// * If you provide both embeddings and embedding_function
     ///
-    pub async fn update(
+    pub fn update(
         &self,
         collection_entries: CollectionEntries,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
     ) -> Result<bool> {
-        let collection_entries = validate(false, collection_entries, embedding_function).await?;
+        let collection_entries = validate(false, collection_entries, embedding_function)?;
 
         let CollectionEntries {
             ids,
@@ -237,8 +237,8 @@ impl ChromaCollection {
         });
 
         let path = format!("/collections/{}/update", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
-        let response = response.json::<bool>().await?;
+        let response = self.api.post(&path, Some(json_body))?;
+        let response = response.json::<bool>()?;
 
         Ok(response)
     }
@@ -261,7 +261,7 @@ impl ChromaCollection {
     /// * If you provide both query_embeddings and query_texts
     /// * If you provide query_texts and don't provide an embedding function when embeddings is None
     ///
-    pub async fn query(
+    pub fn query(
         &self,
         query_options: QueryOptions,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
@@ -285,7 +285,7 @@ impl ChromaCollection {
                 embedding_function
                     .unwrap()
                     .embed(query_texts.as_ref().unwrap())
-                    .await,
+                    ,
             );
         };
 
@@ -303,8 +303,8 @@ impl ChromaCollection {
             .retain(|_, v| !v.is_null());
 
         let path = format!("/collections/{}/query", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
-        let query_result = response.json::<QueryResult>().await?;
+        let response = self.api.post(&path, Some(json_body))?;
+        let query_result = response.json::<QueryResult>()?;
         Ok(query_result)
     }
 
@@ -314,7 +314,7 @@ impl ChromaCollection {
     ///
     /// * `limit` - The number of entries to return.
     ///
-    pub async fn peek(&self, limit: usize) -> Result<GetResult> {
+    pub fn peek(&self, limit: usize) -> Result<GetResult> {
         let get_query = GetOptions {
             ids: vec![],
             where_metadata: None,
@@ -323,7 +323,7 @@ impl ChromaCollection {
             where_document: None,
             include: None,
         };
-        self.get(get_query).await
+        self.get(get_query)
     }
 
     /// Delete the embeddings based on ids and/or a where filter. Deletes all the entries if None are provided
@@ -334,7 +334,7 @@ impl ChromaCollection {
     /// * `where_metadata` -  Used to filter deletion by metadata. E.g. {"$and": ["color" : "red", "price": {"$gte": 4.20}]}. Optional.
     /// * `where_document` - Used to filter the deletion by the document content. E.g. {$contains: "some text"}. Optional.. Optional.
     ///
-    pub async fn delete(
+    pub fn delete(
         &self,
         ids: Option<Vec<&str>>,
         where_metadata: Option<Value>,
@@ -347,8 +347,8 @@ impl ChromaCollection {
         });
 
         let path = format!("/collections/{}/delete", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
-        let response = response.json::<Vec<String>>().await?;
+        let response = self.api.post(&path, Some(json_body))?;
+        let response = response.json::<Vec<String>>()?;
 
         Ok(response)
     }
@@ -396,7 +396,7 @@ pub struct CollectionEntries {
     pub embeddings: Option<Embeddings>,
 }
 
-async fn validate(
+fn validate(
     require_embeddings_or_documents: bool,
     collection_entries: CollectionEntries,
     embedding_function: Option<Box<dyn EmbeddingFunction>>,
@@ -426,7 +426,7 @@ async fn validate(
             embedding_function
                 .unwrap()
                 .embed(documents.as_ref().unwrap())
-                .await,
+                ,
         );
     }
 
@@ -474,33 +474,31 @@ mod tests {
 
     const TEST_COLLECTION: &str = "11-recipies-for-octopus";
 
-    #[tokio::test]
-    async fn test_create_collection() {
+    #[test]
+    fn test_create_collection() {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
             .get_or_create_collection(TEST_COLLECTION, None)
-            .await
             .unwrap();
-        assert!(collection.count().await.is_ok());
+        assert!(collection.count().is_ok());
 
-        let collections = client.list_collections().await.unwrap();
-        assert!(collections[0].count().await.is_ok());
+        let collections = client.list_collections().unwrap();
+        assert!(collections[0].count().is_ok());
     }
 
-    #[tokio::test]
-    async fn test_modify_collection() {
+    #[test]
+    fn test_modify_collection() {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
             .get_or_create_collection(TEST_COLLECTION, None)
-            .await
             .unwrap();
 
         //Test for setting invalid collection name. Should fail.
         assert!(collection
             .modify(Some("new name for test collection"), None)
-            .await
+            
             .is_err());
 
         //Test for setting new metadata. Should pass.
@@ -515,19 +513,18 @@ mod tests {
                     .unwrap()
                 )
             )
-            .await
+            
             .is_ok());
     }
 
-    #[tokio::test]
-    async fn test_get_from_collection() {
+    #[test]
+    fn test_get_from_collection() {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
             .get_or_create_collection(TEST_COLLECTION, None)
-            .await
             .unwrap();
-        assert!(collection.count().await.is_ok());
+        assert!(collection.count().is_ok());
 
         let get_query = GetOptions {
             ids: vec![],
@@ -537,17 +534,16 @@ mod tests {
             where_document: None,
             include: None,
         };
-        let get_result = collection.get(get_query).await.unwrap();
-        assert_eq!(get_result.ids.len(), collection.count().await.unwrap());
+        let get_result = collection.get(get_query).unwrap();
+        assert_eq!(get_result.ids.len(), collection.count().unwrap());
     }
 
-    #[tokio::test]
-    async fn test_add_to_collection() {
+    #[test]
+    fn test_add_to_collection() {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
             .get_or_create_collection(TEST_COLLECTION, None)
-            .await
             .unwrap();
 
         let invalid_collection_entries = CollectionEntries {
@@ -562,7 +558,7 @@ mod tests {
                 invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
-            .await;
+            ;
         assert!(
             response.is_err(),
             "Embeddings and documents cannot both be None"
@@ -582,7 +578,7 @@ mod tests {
                 invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
-            .await;
+            ;
         assert!(
             response.is_err(),
             "IDs, embeddings, metadatas, and documents must all be the same length"
@@ -602,7 +598,7 @@ mod tests {
                 valid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
-            .await;
+            ;
         assert!(
             response.is_ok(),
             "IDs, embeddings, metadatas, and documents must all be the same length"
@@ -622,7 +618,7 @@ mod tests {
                 invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
-            .await;
+            ;
         assert!(response.is_err(), "Empty IDs not allowed");
 
         let invalid_collection_entries = CollectionEntries {
@@ -634,7 +630,7 @@ mod tests {
             ]),
             embeddings: Some(vec![vec![1.0, 2.0], vec![3.0, 4.0]]),
         };
-        let response = collection.add(invalid_collection_entries, None).await;
+        let response = collection.add(invalid_collection_entries, None);
         assert!(
             response.is_err(),
             "Expected IDs to be unique. Duplicates not allowed"
@@ -649,7 +645,7 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection.add(collection_entries, None).await;
+        let response = collection.add(collection_entries, None);
         assert!(
             response.is_err(),
             "embedding_function cannot be None if documents are provided and embeddings are None"
@@ -666,20 +662,19 @@ mod tests {
         };
         let response = collection
             .add(collection_entries, Some(Box::new(MockEmbeddingProvider)))
-            .await;
+            ;
         assert!(
             response.is_ok(),
             "Embeddings are computed by the embedding_function if embeddings are None and documents are provided"
         );
     }
 
-    #[tokio::test]
-    async fn test_upsert_collection() {
+    #[test]
+    fn test_upsert_collection() {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
             .get_or_create_collection(TEST_COLLECTION, None)
-            .await
             .unwrap();
 
         let invalid_collection_entries = CollectionEntries {
@@ -694,7 +689,7 @@ mod tests {
                 invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
-            .await;
+            ;
         assert!(
             response.is_err(),
             "Embeddings and documents cannot both be None"
@@ -714,7 +709,7 @@ mod tests {
                 invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
-            .await;
+            ;
         assert!(
             response.is_err(),
             "IDs, embeddings, metadatas, and documents must all be the same length"
@@ -734,7 +729,7 @@ mod tests {
                 valid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
-            .await;
+            ;
         assert!(
             response.is_ok(),
             "IDs, embeddings, metadatas, and documents must all be the same length"
@@ -754,7 +749,7 @@ mod tests {
                 invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
-            .await;
+            ;
         assert!(response.is_err(), "Empty IDs not allowed");
 
         let invalid_collection_entries = CollectionEntries {
@@ -766,7 +761,7 @@ mod tests {
             ]),
             embeddings: Some(vec![vec![1.0, 2.0], vec![3.0, 4.0]]),
         };
-        let response = collection.upsert(invalid_collection_entries, None).await;
+        let response = collection.upsert(invalid_collection_entries, None);
         assert!(
             response.is_err(),
             "Expected IDs to be unique. Duplicates not allowed"
@@ -781,7 +776,7 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection.upsert(collection_entries, None).await;
+        let response = collection.upsert(collection_entries, None);
         assert!(
             response.is_err(),
             "embedding_function cannot be None if documents are provided and embeddings are None"
@@ -798,20 +793,19 @@ mod tests {
         };
         let response = collection
             .upsert(collection_entries, Some(Box::new(MockEmbeddingProvider)))
-            .await;
+            ;
         assert!(
             response.is_ok(),
             "Embeddings are computed by the embedding_function if embeddings are None and documents are provided"
         );
     }
 
-    #[tokio::test]
-    async fn test_update_collection() {
+    #[test]
+    fn test_update_collection() {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
             .get_or_create_collection(TEST_COLLECTION, None)
-            .await
             .unwrap();
 
         let valid_collection_entries = CollectionEntries {
@@ -826,7 +820,7 @@ mod tests {
                 valid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
-            .await;
+            ;
         assert!(
             response.is_ok(),
             "Embeddings and documents can both be None"
@@ -846,7 +840,7 @@ mod tests {
                 invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
-            .await;
+            ;
         assert!(
             response.is_err(),
             "IDs, embeddings, metadatas, and documents must all be the same length"
@@ -866,7 +860,7 @@ mod tests {
                 valid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
-            .await;
+            ;
         assert!(
             response.is_ok(),
             "IDs, embeddings, metadatas, and documents must all be the same length"
@@ -886,7 +880,7 @@ mod tests {
                 invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
-            .await;
+            ;
         assert!(response.is_err(), "Empty IDs not allowed");
 
         let invalid_collection_entries = CollectionEntries {
@@ -898,7 +892,7 @@ mod tests {
             ]),
             embeddings: Some(vec![vec![1.0, 2.0], vec![3.0, 4.0]]),
         };
-        let response = collection.update(invalid_collection_entries, None).await;
+        let response = collection.update(invalid_collection_entries, None);
         assert!(
             response.is_err(),
             "Expected IDs to be unique. Duplicates not allowed"
@@ -913,7 +907,7 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection.update(collection_entries, None).await;
+        let response = collection.update(collection_entries, None);
         assert!(
             response.is_err(),
             "embedding_function cannot be None if documents are provided and embeddings are None"
@@ -930,22 +924,21 @@ mod tests {
         };
         let response = collection
             .update(collection_entries, Some(Box::new(MockEmbeddingProvider)))
-            .await;
+            ;
         assert!(
             response.is_ok(),
             "Embeddings are computed by the embedding_function if embeddings are None and documents are provided"
         );
     }
 
-    #[tokio::test]
-    async fn test_query_collection() {
+    #[test]
+    fn test_query_collection() {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
             .get_or_create_collection(TEST_COLLECTION, None)
-            .await
             .unwrap();
-        assert!(collection.count().await.is_ok());
+        assert!(collection.count().is_ok());
 
         let query = QueryOptions {
             query_texts: None,
@@ -955,7 +948,7 @@ mod tests {
             n_results: None,
             include: None,
         };
-        let query_result = collection.query(query, None).await;
+        let query_result = collection.query(query, None);
         assert!(
             query_result.is_err(),
             "query_texts and query_embeddings cannot both be None"
@@ -974,7 +967,7 @@ mod tests {
         };
         let query_result = collection
             .query(query, Some(Box::new(MockEmbeddingProvider)))
-            .await;
+            ;
         assert!(
             query_result.is_ok(),
             "query_embeddings will be computed from query_texts if embedding_function is provided"
@@ -993,7 +986,7 @@ mod tests {
         };
         let query_result = collection
             .query(query, Some(Box::new(MockEmbeddingProvider)))
-            .await;
+            ;
         assert!(
             query_result.is_err(),
             "Both query_embeddings and query_texts cannot be provided"
@@ -1007,7 +1000,7 @@ mod tests {
             n_results: None,
             include: None,
         };
-        let query_result = collection.query(query, None).await;
+        let query_result = collection.query(query, None);
         assert!(
             query_result.is_ok(),
             "Use provided query_embeddings if embedding_function is None"

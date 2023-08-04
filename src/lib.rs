@@ -10,7 +10,7 @@
 //! use chromadb::v1::collection::{ChromaCollection, GetResult, GetOptions};
 //! use serde_json::json;
 //!
-//!# async fn doc_client_demo() -> anyhow::Result<()> {
+//!# fn doc_client_demo() -> anyhow::Result<()> {
 //! // With default ChromaClientOptions
 //! // Defaults to http://localhost:8000
 //! let client: ChromaClient = ChromaClient::new(Default::default());
@@ -29,9 +29,9 @@
 //!# use chromadb::v1::ChromaClient;
 //!# use chromadb::v1::collection::{ChromaCollection, GetResult, CollectionEntries, GetOptions};
 //!# use serde_json::json;
-//!# async fn doc_client_create_collection(client: &ChromaClient) -> anyhow::Result<()> {
+//!# fn doc_client_create_collection(client: &ChromaClient) -> anyhow::Result<()> {
 //! // Get or create a collection with the given name and no metadata.
-//! let collection: ChromaCollection = client.get_or_create_collection("my_collection", None).await?;
+//! let collection: ChromaCollection = client.get_or_create_collection("my_collection", None)?;
 //!
 //! // Get the UUID of the collection
 //! let collection_uuid = collection.id();
@@ -48,7 +48,7 @@
 //!    ])
 //! };
 //!
-//! let result: bool = collection.upsert(collection_entries, None).await?;
+//! let result: bool = collection.upsert(collection_entries, None)?;
 //!
 //! // Create a filter object to filter by document content.
 //! let where_document = json!({
@@ -67,7 +67,7 @@
 //!     include: Some(vec!["documents".into(),"embeddings".into()])
 //! };
 //!
-//! let get_result: GetResult = collection.get(get_query).await?;
+//! let get_result: GetResult = collection.get(get_query)?;
 //! println!("Get result: {:?}", get_result);
 //!# Ok(())
 //!# }
@@ -79,7 +79,7 @@
 //! ```
 //!# use chromadb::v1::collection::{ChromaCollection, QueryResult, QueryOptions};
 //!# use serde_json::json;
-//!# async fn doc_query_collection(collection: &ChromaCollection) -> anyhow::Result<()> {
+//!# fn doc_query_collection(collection: &ChromaCollection) -> anyhow::Result<()> {
 //! //Instantiate QueryOptions to perform a similarity search on the collection
 //! //Alternatively, an embedding_function can also be provided with query_texts to perform the search
 //! let query = QueryOptions {
@@ -91,7 +91,7 @@
 //!     include: None,
 //! };
 //! 
-//! let query_result: QueryResult = collection.query(query, None).await?;
+//! let query_result: QueryResult = collection.query(query, None)?;
 //! println!("Query result: {:?}", query_result);
 //!# Ok(()) 
 //!# }

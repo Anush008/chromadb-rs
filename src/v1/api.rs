@@ -1,5 +1,5 @@
 use super::commons::Result;
-use reqwest::Response;
+use minreq::Response;
 use serde_json::Value;
 
 #[derive(Clone, Default, Debug)]
@@ -13,45 +13,49 @@ impl APIClientV1 {
             api_endpoint: endpoint + "/api/v1",
         }
     }
-    pub async fn post(&self, path: &str, json_body: Option<Value>) -> Result<Response> {
+
+    pub fn post(&self, path: &str, json_body: Option<Value>) -> Result<Response> {
         let url = format!(
             "{api_endpoint}{path}",
             api_endpoint = self.api_endpoint,
             path = path
         );
 
-        let res = reqwest::Client::new()
-            .post(&url)
-            .header(reqwest::header::CONTENT_TYPE, "application/json")
-            .json(&json_body)
-            .send()
-            .await;
-        match res {
-            Ok(res) => match res.status().is_success() {
-                true => Ok(res),
-                false => anyhow::bail!("{}: {}", res.status(), res.text().await.unwrap()),
-            },
-            Err(e) => Err(e.into()),
+        let res = minreq::post(&url)
+            .with_header("Content-Type", "application/json")
+            .with_json(&json_body)?
+            .send()?;
+
+        match res.status_code {
+            200..=299 => Ok(res),
+            _ => anyhow::bail!(
+                "{} {}: {}",
+                res.status_code,
+                res.reason_phrase,
+                res.as_str().unwrap()
+            ),
         }
     }
 
-    pub async fn get(&self, path: &str) -> Result<Response> {
+    pub fn get(&self, path: &str) -> Result<Response> {
         let url = format!(
             "{api_endpoint}{path}",
             api_endpoint = self.api_endpoint,
             path = path
         );
-        let res = reqwest::get(&url).await;
-        match res {
-            Ok(res) => match res.status().is_success() {
-                true => Ok(res),
-                false => anyhow::bail!("{}: {}", res.status(), res.text().await.unwrap()),
-            },
-            Err(e) => Err(e.into()),
+        let res = minreq::get(&url).send()?;
+        match res.status_code {
+            200..=299 => Ok(res),
+            _ => anyhow::bail!(
+                "{} {}: {}",
+                res.status_code,
+                res.reason_phrase,
+                res.as_str().unwrap()
+            ),
         }
     }
 
-    pub async fn put(&self, path: &str, json_body: Option<Value>) -> Result<Response> {
+    pub fn put(&self, path: &str, json_body: Option<Value>) -> Result<Response> {
         let url = format!(
             "{api_endpoint}{path}",
             api_endpoint = self.api_endpoint,
@@ -63,34 +67,36 @@ impl APIClientV1 {
             None => Value::Null,
         };
 
-        let res = reqwest::Client::new()
-            .put(&url)
-            .header(reqwest::header::CONTENT_TYPE, "application/json")
-            .json(&json_body)
-            .send()
-            .await;
-        match res {
-            Ok(res) => match res.status().is_success() {
-                true => Ok(res),
-                false => anyhow::bail!("{}: {}", res.status(), res.text().await.unwrap()),
-            },
-            Err(e) => Err(e.into()),
+        let res = minreq::put(&url)
+            .with_header("Content-Type", "application/json")
+            .with_json(&json_body)?
+            .send()?;
+        match res.status_code {
+            200..=299 => Ok(res),
+            _ => anyhow::bail!(
+                "{} {}: {}",
+                res.status_code,
+                res.reason_phrase,
+                res.as_str().unwrap()
+            ),
         }
     }
 
-    pub async fn delete(&self, path: &str) -> Result<Response> {
+    pub fn delete(&self, path: &str) -> Result<Response> {
         let url = format!(
             "{api_endpoint}{path}",
             api_endpoint = self.api_endpoint,
             path = path
         );
-        let res = reqwest::Client::new().delete(&url).send().await;
-        match res {
-            Ok(res) => match res.status().is_success() {
-                true => Ok(res),
-                false => anyhow::bail!("{}: {}", res.status(), res.text().await.unwrap()),
-            },
-            Err(e) => Err(e.into()),
+        let res = minreq::delete(&url).send()?;
+        match res.status_code {
+            200..=299 => Ok(res),
+            _ => anyhow::bail!(
+                "{} {}: {}",
+                res.status_code,
+                res.reason_phrase,
+                res.as_str().unwrap()
+            ),
         }
     }
 }

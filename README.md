@@ -55,7 +55,7 @@ let client: ChromaClient = ChromaClient::new(ChromaClientOptions { url: "<CHROMA
 
  ```rust
 // Get or create a collection with the given name and no metadata.
-let collection: ChromaCollection = client.get_or_create_collection("my_collection", None).await?;
+let collection: ChromaCollection = client.get_or_create_collection("my_collection", None)?;
 
 // Get the UUID of the collection
 let collection_uuid = collection.id();
@@ -76,7 +76,7 @@ let collection_entries = CollectionEntries {
     ])
  };
  
-let result: bool = collection.upsert(collection_entries, None).await?;
+let result: bool = collection.upsert(collection_entries, None)?;
 
 // Create a filter object to filter by document content.
 let where_document = json!({
@@ -93,7 +93,7 @@ let get_query = GetQuery {
      where_document: Some(where_document),
      include: Some(vec!["documents".into(),"embeddings".into()])
  };
-let get_result: GetResult = collection.get(get_query).await?;
+let get_result: GetResult = collection.get(get_query)?;
 println!("Get result: {:?}", get_result);
 
 ```
@@ -113,7 +113,7 @@ let query = QueryOptions {
     include: None,
  };
  
-let query_result: QueryResult = collection.query(query, None).await?;
+let query_result: QueryResult = collection.query(query, None)?;
 println!("Query result: {:?}", query_result);
 ```
 ## Sponsors
