@@ -85,26 +85,22 @@ impl ChromaCollection {
     ///
     pub async fn add(
         &self,
-        ids: Vec<&str>,
-        embeddings: Option<Embeddings>,
-        metadatas: Option<Metadatas>,
-        documents: Option<Documents>,
+        collection_entries: CollectionEntries,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
     ) -> Result<bool> {
-        let (ids, embeddings, metadata, documents) = validate(
-            true,
+        let collection_entries = validate(true, collection_entries, embedding_function).await?;
+
+        let CollectionEntries {
             ids,
             embeddings,
             metadatas,
             documents,
-            embedding_function,
-        )
-        .await?;
+        } = collection_entries;
 
         let json_body = json!({
             "ids": ids,
             "embeddings": embeddings,
-            "metadatas": metadata,
+            "metadatas": metadatas,
             "documents": documents,
         });
 
@@ -137,26 +133,22 @@ impl ChromaCollection {
     ///
     pub async fn upsert(
         &self,
-        ids: Vec<&str>,
-        embeddings: Option<Embeddings>,
-        metadatas: Option<Metadatas>,
-        documents: Option<Documents>,
+        collection_entries: CollectionEntries,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
     ) -> Result<bool> {
-        let (ids, embeddings, metadata, documents) = validate(
-            true,
+        let collection_entries = validate(true, collection_entries, embedding_function).await?;
+
+        let CollectionEntries {
             ids,
             embeddings,
             metadatas,
             documents,
-            embedding_function,
-        )
-        .await?;
+        } = collection_entries;
 
         let json_body = json!({
             "ids": ids,
             "embeddings": embeddings,
-            "metadatas": metadata,
+            "metadatas": metadatas,
             "documents": documents,
         });
 
@@ -178,9 +170,6 @@ impl ChromaCollection {
     /// * `where_document` - Used to filter by the documents. E.g. {"$contains": "hello"}. See <https://docs.trychroma.com/usage-guide#filtering-by-document-contents> for more information on document content filters. Optional.
     /// * `include` - A list of what to include in the results. Can contain `"embeddings"`, `"metadatas"`, `"documents"`. Ids are always included. Defaults to `["metadatas", "documents"]`. Optional.
     ///
-    /// # Errors
-    ///
-    /// * If the collection name is invalid
     pub async fn get(
         &self,
         ids: Vec<&str>,
@@ -225,26 +214,22 @@ impl ChromaCollection {
     ///
     pub async fn update(
         &self,
-        ids: Vec<&str>,
-        embeddings: Option<Embeddings>,
-        metadatas: Option<Metadatas>,
-        documents: Option<Documents>,
+        collection_entries: CollectionEntries,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
     ) -> Result<bool> {
-        let (ids, embeddings, metadata, documents) = validate(
-            false,
+        let collection_entries = validate(false, collection_entries, embedding_function).await?;
+
+        let CollectionEntries {
             ids,
             embeddings,
             metadatas,
             documents,
-            embedding_function,
-        )
-        .await?;
+        } = collection_entries;
 
         let json_body = json!({
             "ids": ids,
             "embeddings": embeddings,
-            "metadatas": metadata,
+            "metadatas": metadatas,
             "documents": documents,
         });
 
@@ -257,9 +242,42 @@ impl ChromaCollection {
 
     pub fn query() {}
 
-    pub fn peek() {}
+    ///Get the first entries in the collection up to the limit
+    ///
+    /// # Arguments
+    ///
+    /// * `limit` - The number of entries to return.
+    ///
+    pub async fn peek(&self, limit: usize) -> Result<GetResult> {
+        self.get(vec![], None, Some(limit), None, None, None).await
+    }
 
-    pub fn delete() {}
+    /// Delete the embeddings based on ids and/or a where filter. Deletes all the entries if None are provided
+    ///
+    /// # Arguments
+    ///
+    /// * `ids` - The ids of the embeddings to delete. Optional
+    /// * `where_metadata` -  Used to filter deletion by metadata. E.g. {"$and": ["color" : "red", "price": {"$gte": 4.20}]}. Optional.
+    /// * `where_document` - Used to filter the deletion by the document content. E.g. {$contains: "some text"}. Optional.. Optional.
+    ///
+    pub async fn delete(
+        &self,
+        ids: Option<Vec<&str>>,
+        where_metadata: Option<Value>,
+        where_document: Option<Value>,
+    ) -> Result<Vec<String>> {
+        let json_body = json!({
+            "ids": ids,
+            "where": where_metadata,
+            "where_document": where_document,
+        });
+
+        let path = format!("/collections/{}/delete", self.id);
+        let response = self.api.post(&path, Some(json_body)).await?;
+        let response = response.json::<Vec<String>>().await?;
+
+        Ok(response)
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -272,12 +290,15 @@ pub struct GetResult {
 
 async fn validate(
     require_embeddings_or_documents: bool,
-    ids: Vec<&str>,
-    embeddings: Option<Embeddings>,
-    metadata: Option<Metadatas>,
-    documents: Option<Documents>,
+    collection_entries: CollectionEntries,
     embedding_function: Option<Box<dyn EmbeddingFunction>>,
-) -> Result<(Vec<&str>, Embeddings, Option<Metadatas>, Option<Documents>)> {
+) -> Result<CollectionEntries> {
+    let CollectionEntries {
+        ids,
+        embeddings,
+        metadatas,
+        documents,
+    } = collection_entries;
     if require_embeddings_or_documents && embeddings.is_none() && documents.is_none() {
         bail!("Embeddings and documents cannot both be None",);
     }
@@ -307,7 +328,7 @@ async fn validate(
     }
 
     if (embeddings.is_some() && embeddings.as_ref().unwrap().len() != ids.len())
-        || (metadata.is_some() && metadata.as_ref().unwrap().len() != ids.len())
+        || (metadatas.is_some() && metadatas.as_ref().unwrap().len() != ids.len())
         || (documents.is_some() && documents.as_ref().unwrap().len() != ids.len())
     {
         bail!("IDs, embeddings, metadatas, and documents must all be the same length",);
@@ -324,14 +345,28 @@ async fn validate(
             duplicate_ids
         );
     }
-    Ok((ids, embeddingss, metadata, documents))
+    Ok(CollectionEntries {
+        ids,
+        metadatas,
+        documents,
+        embeddings,
+    })
+}
+
+pub struct CollectionEntries {
+    pub ids: Vec<String>,
+    pub metadatas: Option<Vec<Metadata>>,
+    pub documents: Option<Documents>,
+    pub embeddings: Option<Embeddings>,
 }
 
 #[cfg(test)]
 mod tests {
     use serde_json::json;
 
-    use crate::v1::{embeddings::MockEmbeddingProvider, ChromaClient};
+    use crate::v1::{
+        collection::CollectionEntries, embeddings::MockEmbeddingProvider, ChromaClient,
+    };
 
     const TEST_COLLECTION: &str = "11-recipies-for-octopus";
 
@@ -406,12 +441,16 @@ mod tests {
             .await
             .unwrap();
 
+        let invalid_collection_entries = CollectionEntries {
+            ids: vec!["test1".into()],
+            metadatas: None,
+            documents: None,
+            embeddings: None,
+        };
+
         let response = collection
             .add(
-                vec!["test"],
-                None,
-                None,
-                None,
+                invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
             .await;
@@ -420,15 +459,18 @@ mod tests {
             "Embeddings and documents cannot both be None"
         );
 
+        let invalid_collection_entries = CollectionEntries {
+            ids: vec!["test".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: None,
+        };
         let response = collection
             .add(
-                vec!["test"],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
+                invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
             .await;
@@ -437,15 +479,18 @@ mod tests {
             "IDs, embeddings, metadatas, and documents must all be the same length"
         );
 
+        let valid_collection_entries = CollectionEntries {
+            ids: vec!["test1".into(), "test2".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: None,
+        };
         let response = collection
             .add(
-                vec!["test1", "test2"],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
+                valid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
             .await;
@@ -454,65 +499,64 @@ mod tests {
             "IDs, embeddings, metadatas, and documents must all be the same length"
         );
 
+        let invalid_collection_entries = CollectionEntries {
+            ids: vec!["test1".into(), "".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: None,
+        };
         let response = collection
             .add(
-                vec!["test1", ""],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
+                invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
             .await;
         assert!(response.is_err(), "Empty IDs not allowed");
 
-        let response = collection
-            .add(
-                vec!["test", "test"],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
-                Some(Box::new(MockEmbeddingProvider)),
-            )
-            .await;
+        let invalid_collection_entries = CollectionEntries {
+            ids: vec!["test".into(), "test".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: Some(vec![vec![1.0, 2.0], vec![3.0, 4.0]]),
+        };
+        let response = collection.add(invalid_collection_entries, None).await;
         assert!(
             response.is_err(),
             "Expected IDs to be unique. Duplicates not allowed"
         );
 
-        let response = collection
-            .add(
-                vec!["test1", "test2"],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
-                None,
-            )
-            .await;
+        let collection_entries = CollectionEntries {
+            ids: vec!["test1".into(), "test2".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: None,
+        };
+        let response = collection.add(collection_entries, None).await;
         assert!(
             response.is_err(),
             "embedding_function cannot be None if documents are provided and embeddings are None"
         );
 
+        let collection_entries = CollectionEntries {
+            ids: vec!["test1".into(), "test2".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: None,
+        };
         let response = collection
-            .add(
-                vec!["test1", "test2"],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
-                Some(Box::new(MockEmbeddingProvider)),
-            )
+            .add(collection_entries, Some(Box::new(MockEmbeddingProvider)))
             .await;
         assert!(
             response.is_ok(),
@@ -529,12 +573,16 @@ mod tests {
             .await
             .unwrap();
 
+        let invalid_collection_entries = CollectionEntries {
+            ids: vec!["test1".into()],
+            metadatas: None,
+            documents: None,
+            embeddings: None,
+        };
+
         let response = collection
             .upsert(
-                vec!["test"],
-                None,
-                None,
-                None,
+                invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
             .await;
@@ -543,15 +591,18 @@ mod tests {
             "Embeddings and documents cannot both be None"
         );
 
+        let invalid_collection_entries = CollectionEntries {
+            ids: vec!["test".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: None,
+        };
         let response = collection
             .upsert(
-                vec!["test"],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
+                invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
             .await;
@@ -560,15 +611,18 @@ mod tests {
             "IDs, embeddings, metadatas, and documents must all be the same length"
         );
 
+        let valid_collection_entries = CollectionEntries {
+            ids: vec!["test1".into(), "test2".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: None,
+        };
         let response = collection
             .upsert(
-                vec!["test1", "test2"],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
+                valid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
             .await;
@@ -577,65 +631,64 @@ mod tests {
             "IDs, embeddings, metadatas, and documents must all be the same length"
         );
 
+        let invalid_collection_entries = CollectionEntries {
+            ids: vec!["test1".into(), "".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: None,
+        };
         let response = collection
             .upsert(
-                vec!["test1", ""],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
+                invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
             .await;
         assert!(response.is_err(), "Empty IDs not allowed");
 
-        let response = collection
-            .upsert(
-                vec!["test", "test"],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
-                Some(Box::new(MockEmbeddingProvider)),
-            )
-            .await;
+        let invalid_collection_entries = CollectionEntries {
+            ids: vec!["test".into(), "test".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: Some(vec![vec![1.0, 2.0], vec![3.0, 4.0]]),
+        };
+        let response = collection.upsert(invalid_collection_entries, None).await;
         assert!(
             response.is_err(),
             "Expected IDs to be unique. Duplicates not allowed"
         );
 
-        let response = collection
-            .upsert(
-                vec!["test1", "test2"],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
-                None,
-            )
-            .await;
+        let collection_entries = CollectionEntries {
+            ids: vec!["test1".into(), "test2".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: None,
+        };
+        let response = collection.upsert(collection_entries, None).await;
         assert!(
             response.is_err(),
             "embedding_function cannot be None if documents are provided and embeddings are None"
         );
 
+        let collection_entries = CollectionEntries {
+            ids: vec!["test1".into(), "test2".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: None,
+        };
         let response = collection
-            .upsert(
-                vec!["test1", "test2"],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
-                Some(Box::new(MockEmbeddingProvider)),
-            )
+            .upsert(collection_entries, Some(Box::new(MockEmbeddingProvider)))
             .await;
         assert!(
             response.is_ok(),
@@ -652,12 +705,16 @@ mod tests {
             .await
             .unwrap();
 
+        let valid_collection_entries = CollectionEntries {
+            ids: vec!["test1".into()],
+            metadatas: None,
+            documents: None,
+            embeddings: None,
+        };
+
         let response = collection
             .update(
-                vec!["test"],
-                None,
-                None,
-                None,
+                valid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
             .await;
@@ -666,15 +723,18 @@ mod tests {
             "Embeddings and documents can both be None"
         );
 
+        let invalid_collection_entries = CollectionEntries {
+            ids: vec!["test".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: None,
+        };
         let response = collection
             .update(
-                vec!["test"],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
+                invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
             .await;
@@ -683,15 +743,18 @@ mod tests {
             "IDs, embeddings, metadatas, and documents must all be the same length"
         );
 
+        let valid_collection_entries = CollectionEntries {
+            ids: vec!["test1".into(), "test2".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: None,
+        };
         let response = collection
             .update(
-                vec!["test1", "test2"],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
+                valid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
             .await;
@@ -700,65 +763,64 @@ mod tests {
             "IDs, embeddings, metadatas, and documents must all be the same length"
         );
 
+        let invalid_collection_entries = CollectionEntries {
+            ids: vec!["test1".into(), "".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: None,
+        };
         let response = collection
             .update(
-                vec!["test1", ""],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
+                invalid_collection_entries,
                 Some(Box::new(MockEmbeddingProvider)),
             )
             .await;
         assert!(response.is_err(), "Empty IDs not allowed");
 
-        let response = collection
-            .update(
-                vec!["test", "test"],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
-                Some(Box::new(MockEmbeddingProvider)),
-            )
-            .await;
+        let invalid_collection_entries = CollectionEntries {
+            ids: vec!["test".into(), "test".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: Some(vec![vec![1.0, 2.0], vec![3.0, 4.0]]),
+        };
+        let response = collection.update(invalid_collection_entries, None).await;
         assert!(
             response.is_err(),
             "Expected IDs to be unique. Duplicates not allowed"
         );
 
-        let response = collection
-            .update(
-                vec!["test1", "test2"],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
-                None,
-            )
-            .await;
+        let collection_entries = CollectionEntries {
+            ids: vec!["test1".into(), "test2".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: None,
+        };
+        let response = collection.update(collection_entries, None).await;
         assert!(
             response.is_err(),
             "embedding_function cannot be None if documents are provided and embeddings are None"
         );
 
+        let collection_entries = CollectionEntries {
+            ids: vec!["test1".into(), "test2".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+                "Document content 2".into(),
+            ]),
+            embeddings: None,
+        };
         let response = collection
-            .update(
-                vec!["test1", "test2"],
-                None,
-                None,
-                Some(vec![
-                    "Document content 1".into(),
-                    "Document content 2".into(),
-                ]),
-                Some(Box::new(MockEmbeddingProvider)),
-            )
+            .update(collection_entries, Some(Box::new(MockEmbeddingProvider)))
             .await;
         assert!(
             response.is_ok(),

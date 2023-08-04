@@ -27,7 +27,7 @@
 //!
 //! ```
 //!# use chromadb::v1::ChromaClient;
-//!# use chromadb::v1::collection::{ChromaCollection, GetResult};
+//!# use chromadb::v1::collection::{ChromaCollection, GetResult, CollectionEntries};
 //!# use serde_json::json;
 //!# async fn doc_client_create_collection(client: &ChromaClient) -> anyhow::Result<()> {
 //! // Get or create a collection with the given name and no metadata.
@@ -38,15 +38,18 @@
 //! println!("Collection UUID: {}", collection_uuid);
 //!
 //! // Upsert some embeddings with documents and no metadata.
-//! let result: bool = collection.upsert(
-//!    vec!["demo-id-1", "demo-id-1", "demo-id-1"],
-//!    Some(vec![vec![0.0_f64; 768]]),
-//!    None,
-//!    Some(vec![
+//! 
+//! let collection_entries = CollectionEntries {
+//!    ids: vec!["demo-id-1".into(), "demo-id-2".into()],
+//!    embeddings: Some(vec![vec![0.0_f64; 768], vec![0.0_f64; 768]]),
+//!    metadatas: None,
+//!    documents: Some(vec![
 //!        "Some document about 9 octopus recipies".into(),
 //!        "Some other document about DCEU Superman Vs CW Superman".into()
-//!    ]),
-//!    None).await?;
+//!    ])
+//! };
+//!
+//! let result: bool = collection.upsert(collection_entries, None).await?;
 //!
 //! // Create a filter object to filter by document content.
 //! let where_document = json!({
