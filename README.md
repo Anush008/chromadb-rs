@@ -118,7 +118,7 @@ println!("Query result: {:?}", query_result);
 ```
 ## Sponsors
 
-[![OpenSauced logo](https://github.com/open-sauced/assets/blob/main/logos/logo-on-dark.png)](https://opensauced.pizza?utm_source=chromadbrs&utm_medium=github&utm_campaign=sponsorship)
+[![OpenSauced logo](https://raw.githubusercontent.com/open-sauced/assets/main/logos/logo-on-dark.png)](https://opensauced.pizza?utm_source=chromadbrs&utm_medium=github&utm_campaign=sponsorship)
 
 [OpenSauced](https://opensauced.pizza?utm_source=chromadbrs&utm_medium=github&utm_campaign=sponsorship) provides insights into open source projects by using data science in git commits. 
 
