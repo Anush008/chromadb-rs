@@ -6,7 +6,7 @@ pub trait EmbeddingFunction {
 }
 
 #[derive(Clone)]
-pub struct MockEmbeddingProvider;
+pub(super) struct MockEmbeddingProvider;
 
 #[async_trait]
 impl EmbeddingFunction for MockEmbeddingProvider {

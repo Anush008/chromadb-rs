@@ -4,7 +4,7 @@ authors = ["Anush008"]
 description = "A Rust client for  ChromaDB. https://docs.rs/chromadb/latest/chromadb/"
 edition = "2021"
 license = "MIT"
-version = "0.1.65"
+version = "0.1.7"
 repository = "https://github.com/Anush008/chromadb-rs/"
 
 [dependencies.serde]
