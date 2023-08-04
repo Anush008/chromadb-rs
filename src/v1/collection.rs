@@ -295,7 +295,7 @@ async fn validate(
 ) -> Result<CollectionEntries> {
     let CollectionEntries {
         ids,
-        embeddings,
+        mut embeddings,
         metadatas,
         documents,
     } = collection_entries;
@@ -313,12 +313,13 @@ async fn validate(
         bail!("embedding_function should be None if embeddings are provided",);
     }
 
-    let mut embeddingss = Vec::new();
     if embeddings.is_none() && documents.is_some() && embedding_function.is_some() {
-        embeddingss = embedding_function
-            .unwrap()
-            .embed(&documents.as_ref().unwrap())
-            .await;
+        embeddings = Some(
+            embedding_function
+                .unwrap()
+                .embed(&documents.as_ref().unwrap())
+                .await,
+        );
     }
 
     for id in &ids {
@@ -355,7 +356,7 @@ async fn validate(
 
 pub struct CollectionEntries {
     pub ids: Vec<String>,
-    pub metadatas: Option<Vec<Metadata>>,
+    pub metadatas: Option<Metadatas>,
     pub documents: Option<Documents>,
     pub embeddings: Option<Embeddings>,
 }
