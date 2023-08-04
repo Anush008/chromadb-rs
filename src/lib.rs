@@ -4,7 +4,7 @@
 //! * `client` - To interface with the ChromaDB server.
 //! * `collection` - To interface with an associated ChromaDB collection.
 //!
-//! You can connect to ChromaDB by instantiating a [ChromaClient](crate::v1::ChromaClient)
+//! ### Instantiating [ChromaClient](crate::v1::ChromaClient)
 //! ```
 //! use chromadb::v1::client::{ChromaClient, ChromaClientOptions};
 //! use chromadb::v1::collection::{ChromaCollection, GetResult, GetOptions};
@@ -23,7 +23,7 @@
 //! ```
 //! Now that a client is instantiated, we can interface with the ChromaDB server and execute queries.
 //!
-//! A collection can be retrieved with the [create_collection](crate::v1::ChromaClient::create_collection), [get_or_create_collection](crate::v1::ChromaClient::get_or_create_collection), [get_collection](crate::v1::ChromaClient::get_collection) methods.
+//! ### Collection Queries
 //!
 //! ```
 //!# use chromadb::v1::ChromaClient;
@@ -38,7 +38,6 @@
 //! println!("Collection UUID: {}", collection_uuid);
 //!
 //! // Upsert some embeddings with documents and no metadata.
-//!
 //! let collection_entries = CollectionEntries {
 //!    ids: vec!["demo-id-1".into(), "demo-id-2".into()],
 //!    embeddings: Some(vec![vec![0.0_f64; 768], vec![0.0_f64; 768]]),
@@ -73,5 +72,29 @@
 //!# Ok(())
 //!# }
 //! ```
-//! Find more information about on the available filters and options in the [get()](crate::v1::ChromaCollection::get) documentation.
+//!Find more information about on the available filters and options in the [get()](crate::v1::ChromaCollection::get) documentation.
+//! 
+//! 
+//! ### Perform a similarity search.
+//! ```
+//!# use chromadb::v1::collection::{ChromaCollection, QueryResult, QueryOptions};
+//!# use serde_json::json;
+//!# async fn doc_query_collection(collection: &ChromaCollection) -> anyhow::Result<()> {
+//! //Instantiate QueryOptions to perform a similarity search on the collection
+//! //Alternatively, an embedding_function can also be provided with query_texts to perform the search
+//! let query = QueryOptions {
+//!     query_texts: None,
+//!     query_embeddings: Some(vec![vec![0.0_f64; 768], vec![0.0_f64; 768]]),
+//!     where_metadata: None,
+//!     where_document: None,
+//!     n_results: Some(5),
+//!     include: None,
+//! };
+//! 
+//! let query_result: QueryResult = collection.query(query, None).await?;
+//! println!("Query result: {:?}", query_result);
+//!# Ok(()) 
+//!# }
+//! ```
+//! 
 pub mod v1;

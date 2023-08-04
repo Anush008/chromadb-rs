@@ -93,13 +93,30 @@ let get_query = GetQuery {
      where_document: Some(where_document),
      include: Some(vec!["documents".into(),"embeddings".into()])
  };
- 
 let get_result: GetResult = collection.get(get_query).await?;
 println!("Get result: {:?}", get_result);
 
 ```
 Find more information about the available filters and options in the [get()](https://docs.rs/chromadb/latest/chromadb/v1/collection/struct.ChromaCollection.html#method.get) documentation.
 
+
+### Performing a similarity search
+```rust
+//Instantiate QueryOptions to perform a similarity search on the collection
+//Alternatively, an embedding_function can also be provided with query_texts to perform the search
+let query = QueryOptions {
+    query_texts: None,
+    query_embeddings: Some(vec![vec![0.0_f64; 768], vec![0.0_f64; 768]]),
+    where_metadata: None,
+    where_document: None,
+    n_results: Some(5),
+    include: None,
+ };
+ 
+let query_result: QueryResult = collection.query(query, None).await?;
+println!("Query result: {:?}", query_result);
+```
+
 ## ⚖️ LICENSE
 
-MIT © [Anush008](https://github.com/Anush008/chromadb-rs/blob/master/LICENSE)
+MIT © [2023](https://github.com/Anush008/chromadb-rs/blob/master/LICENSE)
