@@ -1,7 +1,7 @@
 use anyhow::bail;
 use serde::Deserialize;
 use serde_json::{json, Value};
-use std::{collections::HashSet, sync::Arc};
+use std::{collections::HashSet, sync::Arc, vec};
 
 use super::{
     api::APIClientV1,
@@ -77,8 +77,7 @@ impl ChromaCollection {
     ///
     /// * If you don't provide either embeddings or documents
     /// * If the length of ids, embeddings, metadatas, or documents don't match
-    /// * If you provide duplicates in ids
-    /// * If you provide empty ids
+    /// * If you provide duplicates in ids, empty ids
     /// * If you provide documents and don't provide an embedding function when embeddings is None
     /// * If you provide an embedding function and don't provide documents
     /// * If you provide both embeddings and embedding_function
@@ -125,8 +124,7 @@ impl ChromaCollection {
     ///
     /// * If you don't provide either embeddings or documents
     /// * If the length of ids, embeddings, metadatas, or documents don't match
-    /// * If you provide duplicates in ids
-    /// * If you provide empty ids
+    /// * If you provide duplicates in ids, empty ids
     /// * If you provide documents and don't provide an embedding function when embeddings is None
     /// * If you provide an embedding function and don't provide documents
     /// * If you provide both embeddings and embedding_function
@@ -159,7 +157,7 @@ impl ChromaCollection {
         Ok(response)
     }
 
-    /// Get embeddings and their associate data from the data store. If no ids or filter is provided returns all embeddings up to limit starting at offset.
+    /// Get embeddings and their associated data from the collection. If no ids or filter is provided returns all embeddings up to limit starting at offset.
     ///
     /// # Arguments
     ///
@@ -170,15 +168,15 @@ impl ChromaCollection {
     /// * `where_document` - Used to filter by the documents. E.g. {"$contains": "hello"}. See <https://docs.trychroma.com/usage-guide#filtering-by-document-contents> for more information on document content filters. Optional.
     /// * `include` - A list of what to include in the results. Can contain `"embeddings"`, `"metadatas"`, `"documents"`. Ids are always included. Defaults to `["metadatas", "documents"]`. Optional.
     ///
-    pub async fn get(
-        &self,
-        ids: Vec<&str>,
-        where_metadata: Option<Value>,
-        limit: Option<usize>,
-        offset: Option<usize>,
-        where_document: Option<Value>,
-        include: Option<Vec<&str>>,
-    ) -> Result<GetResult> {
+    pub async fn get(&self, get_query: GetQuery) -> Result<GetResult> {
+        let GetQuery {
+            ids,
+            where_metadata,
+            limit,
+            offset,
+            where_document,
+            include,
+        } = get_query;
         let json_body = json!({
             "ids": ids,
             "where": where_metadata,
@@ -206,8 +204,7 @@ impl ChromaCollection {
     /// # Errors
     ///
     /// * If the length of ids, embeddings, metadatas, or documents don't match
-    /// * If you provide duplicates in ids
-    /// * If you provide empty ids
+    /// * If you provide duplicates in ids, empty ids
     /// * If you provide documents and don't provide an embedding function when embeddings is None
     /// * If you provide an embedding function and don't provide documents
     /// * If you provide both embeddings and embedding_function
@@ -249,7 +246,15 @@ impl ChromaCollection {
     /// * `limit` - The number of entries to return.
     ///
     pub async fn peek(&self, limit: usize) -> Result<GetResult> {
-        self.get(vec![], None, Some(limit), None, None, None).await
+        let get_query = GetQuery {
+            ids: vec![],
+            where_metadata: None,
+            limit: Some(limit),
+            offset: None,
+            where_document: None,
+            include: None,
+        };
+        self.get(get_query).await
     }
 
     /// Delete the embeddings based on ids and/or a where filter. Deletes all the entries if None are provided
@@ -284,6 +289,22 @@ impl ChromaCollection {
 pub struct GetResult {
     pub ids: Vec<String>,
     pub metadatas: Option<Vec<Metadata>>,
+    pub documents: Option<Documents>,
+    pub embeddings: Option<Embeddings>,
+}
+
+pub struct GetQuery {
+    pub ids: Vec<String>,
+    pub where_metadata: Option<Value>,
+    pub limit: Option<usize>,
+    pub offset: Option<usize>,
+    pub where_document: Option<Value>,
+    pub include: Option<Vec<String>>,
+}
+
+pub struct CollectionEntries {
+    pub ids: Vec<String>,
+    pub metadatas: Option<Metadatas>,
     pub documents: Option<Documents>,
     pub embeddings: Option<Embeddings>,
 }
@@ -354,19 +375,14 @@ async fn validate(
     })
 }
 
-pub struct CollectionEntries {
-    pub ids: Vec<String>,
-    pub metadatas: Option<Metadatas>,
-    pub documents: Option<Documents>,
-    pub embeddings: Option<Embeddings>,
-}
-
 #[cfg(test)]
 mod tests {
     use serde_json::json;
 
     use crate::v1::{
-        collection::CollectionEntries, embeddings::MockEmbeddingProvider, ChromaClient,
+        collection::{CollectionEntries, GetQuery},
+        embeddings::MockEmbeddingProvider,
+        ChromaClient,
     };
 
     const TEST_COLLECTION: &str = "11-recipies-for-octopus";
@@ -426,10 +442,15 @@ mod tests {
             .unwrap();
         assert!(collection.count().await.is_ok());
 
-        let get_result = collection
-            .get(vec![], None, None, None, None, None)
-            .await
-            .unwrap();
+        let get_query = GetQuery {
+            ids: vec![],
+            where_metadata: None,
+            limit: None,
+            offset: None,
+            where_document: None,
+            include: None,
+        };
+        let get_result = collection.get(get_query).await.unwrap();
         assert_eq!(get_result.ids.len(), collection.count().await.unwrap());
     }
 

@@ -4,7 +4,7 @@ authors = ["Anush008"]
 description = "A Rust client library for the ChromaDB vector database."
 edition = "2021"
 license = "MIT"
-version = "0.1.8"
+version = "0.1.85"
 repository = "https://github.com/Anush008/chromadb-rs/"
 
 [dependencies.serde]

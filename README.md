@@ -1,6 +1,6 @@
 <div align="center">
   <h1><a href="https://crates.io/crates/chromadb">ChromaDB-rs</a></h1>
-  <h3>A Rust based client library for the ChromaDB vector database.</h3>
+  <h3>A Rust based client library for the Chroma vector database.</h3>
   <a href="https://crates.io/crates/chromadb"><img src="https://img.shields.io/crates/v/chromadb.svg" alt="Crates.io"></a>
   <a href="https://github.com/Anush008/chromadb-rs/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-mit-blue.svg" alt="MIT Licensed"></a>
   <a href="https://docs.rs/chromadb"><img src="https://img.shields.io/docsrs/chromadb/latest" alt="Docs.rs"></a>
@@ -40,7 +40,7 @@ The library reference can be found [here](https://docs.rs/chromadb).
  
  ```rust
 use chromadb::v1::ChromaClient;
-use chromadb::v1::collection::{ChromaCollection, GetResult, CollectionEntries};
+use chromadb::v1::collection::{ChromaCollection, GetQuery, GetResult, CollectionEntries};
 use serde_json::json;
 
 // With default ChromaClientOptions
@@ -85,16 +85,15 @@ let where_document = json!({
  
 // Get embeddings from a collection with filters and limit set to 1. 
 // An empty IDs vec will return all embeddings.
-let get_result: GetResult = collection.get(
-    vec![],
-    None,
-    Some(1),
-    None,
-    Some(where_document),
-    Some(vec![
-        "documents",
-        "embeddings"
-    ])).await?;
+let get_query = GetQuery {
+     ids: vec![],
+     where_metadata: None,
+     limit: Some(1),
+     offset: None,
+     where_document: Some(where_document),
+     include: Some(vec!["documents".into(),"embeddings".into()])
+ };
+let get_result: GetResult = collection.get(get_query).await?;
 println!("Get result: {:?}", get_result);
 
 ```

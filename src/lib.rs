@@ -7,7 +7,7 @@
 //! You can connect to ChromaDB by instantiating a [ChromaClient](crate::v1::ChromaClient)
 //! ```
 //! use chromadb::v1::client::{ChromaClient, ChromaClientOptions};
-//! use chromadb::v1::collection::{ChromaCollection, GetResult};
+//! use chromadb::v1::collection::{ChromaCollection, GetResult, GetQuery};
 //! use serde_json::json;
 //!
 //!# async fn doc_client_demo() -> anyhow::Result<()> {
@@ -27,7 +27,7 @@
 //!
 //! ```
 //!# use chromadb::v1::ChromaClient;
-//!# use chromadb::v1::collection::{ChromaCollection, GetResult, CollectionEntries};
+//!# use chromadb::v1::collection::{ChromaCollection, GetResult, CollectionEntries, GetQuery};
 //!# use serde_json::json;
 //!# async fn doc_client_create_collection(client: &ChromaClient) -> anyhow::Result<()> {
 //! // Get or create a collection with the given name and no metadata.
@@ -38,7 +38,7 @@
 //! println!("Collection UUID: {}", collection_uuid);
 //!
 //! // Upsert some embeddings with documents and no metadata.
-//! 
+//!
 //! let collection_entries = CollectionEntries {
 //!    ids: vec!["demo-id-1".into(), "demo-id-2".into()],
 //!    embeddings: Some(vec![vec![0.0_f64; 768], vec![0.0_f64; 768]]),
@@ -55,19 +55,20 @@
 //! let where_document = json!({
 //!    "$contains": "Superman"
 //!     });
-//! 
-//! // Get embeddings from a collection with filters and limit set to 1. 
+//!
+//! // Get embeddings from a collection with filters and limit set to 1.
 //! // An empty IDs vec will return all embeddings.
-//! let get_result: GetResult = collection.get(
-//!    vec![],
-//!    None,
-//!    Some(1),
-//!    None,
-//!    Some(where_document),
-//!    Some(vec![
-//!        "documents",
-//!        "embeddings"
-//!    ])).await?;
+//!
+//! let get_query = GetQuery {
+//!     ids: vec![],
+//!     where_metadata: None,
+//!     limit: Some(1),
+//!     offset: None,
+//!     where_document: Some(where_document),
+//!     include: Some(vec!["documents".into(),"embeddings".into()])
+//! };
+//!
+//! let get_result: GetResult = collection.get(get_query).await?;
 //! println!("Get result: {:?}", get_result);
 //!# Ok(())
 //!# }
