@@ -27,7 +27,7 @@ impl ChromaClient {
     /// * Defaults to `url`: http://localhost:8000
     pub fn new(options: ChromaClientOptions) -> ChromaClient {
         let endpoint = if options.url.is_empty() {
-            DEFAULT_ENDPOINT.into()
+            std::env::var("CHROMA_URL").unwrap_or(DEFAULT_ENDPOINT.to_string())
         } else {
             options.url
         };
