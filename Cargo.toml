@@ -21,3 +21,12 @@ version = "1"
 
 [dependencies.serde_json]
 version = "1"
+
+[dependencies.rust-bert]
+version = "0.21"
+features = ["download-libtorch"]
+optional = true
+
+[features]
+bert = ["dep:rust-bert"]
+openai = []

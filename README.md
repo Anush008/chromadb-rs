@@ -68,7 +68,7 @@ println!("Collection UUID: {}", collection_uuid);
 // Upsert some embeddings with documents and no metadata.
 let collection_entries = CollectionEntries {
     ids: vec!["demo-id-1".into(), "demo-id-2".into()],
-    embeddings: Some(vec![vec![0.0_f64; 768], vec![0.0_f64; 768]]),
+    embeddings: Some(vec![vec![0.0_f32; 768], vec![0.0_f32; 768]]),
     metadatas: None,
     documents: Some(vec![
         "Some document about 9 octopus recipies".into(),
@@ -106,7 +106,7 @@ Find more information about the available filters and options in the [get()](htt
 //Alternatively, an embedding_function can also be provided with query_texts to perform the search
 let query = QueryOptions {
     query_texts: None,
-    query_embeddings: Some(vec![vec![0.0_f64; 768], vec![0.0_f64; 768]]),
+    query_embeddings: Some(vec![vec![0.0_f32; 768], vec![0.0_f32; 768]]),
     where_metadata: None,
     where_document: None,
     n_results: Some(5),
