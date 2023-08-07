@@ -36,7 +36,7 @@ impl Default for OpenAIConfig {
     fn default() -> Self {
         Self {
             api_endpoint: OPENAI_EMBEDDINGS_ENDPOINT.to_string(),
-            api_key: std::env::var("OPENAI_API_KEY").unwrap(),
+            api_key: std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY env is not set"),
             model: OPENAI_EMBEDDINGS_MODEL.to_string(),
         }
     }
@@ -67,7 +67,7 @@ impl OpenAIEmbeddings {
 }
 
 impl EmbeddingFunction for OpenAIEmbeddings {
-    fn embed(&self, docs: &[String]) -> anyhow::Result<Vec<Embedding>> {
+    fn embed(&self, docs: &[&str]) -> anyhow::Result<Vec<Embedding>> {
         let mut embeddings = Vec::new();
         docs.iter().for_each(|doc| {
             let req = EmbeddingRequest {
@@ -79,5 +79,39 @@ impl EmbeddingFunction for OpenAIEmbeddings {
             embeddings.push(body.data[0].embedding.clone());
         });
         Ok(embeddings)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::v1::collection::CollectionEntries;
+    use super::*;
+    use crate::v1::ChromaClient;
+
+    #[test]
+    fn test_openai_embeddings() {
+
+        let client = ChromaClient::new(Default::default());
+        let collection = client
+            .get_or_create_collection("open-ai-test-collection", None)
+            .unwrap();
+        let openai_embeddings = OpenAIEmbeddings::new(Default::default());
+
+        let docs = vec![
+            "Once upon a time there was a frog",
+            "Once upon a time there was a cow",
+            "Once upon a time there was a wolverine",
+        ];
+
+        let collection_entries = CollectionEntries {
+            ids: vec!["test1", "test2", "test3"],
+            metadatas: None,
+            documents: Some(docs),
+            embeddings: None,
+        };
+
+        collection
+            .upsert(collection_entries, Some(Box::new(openai_embeddings)))
+            .unwrap();
     }
 }

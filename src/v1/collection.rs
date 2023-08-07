@@ -372,13 +372,13 @@ pub struct GetOptions {
 }
 
 #[derive(Serialize, Debug, Default)]
-pub struct QueryOptions {
+pub struct QueryOptions<'a> {
     pub query_embeddings: Option<Embeddings>,
-    pub query_texts: Option<Vec<String>>,
+    pub query_texts: Option<Vec<&'a str>>,
     pub n_results: Option<usize>,
     pub where_metadata: Option<Value>,
     pub where_document: Option<Value>,
-    pub include: Option<Vec<String>>,
+    pub include: Option<Vec<&'a str>>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -391,10 +391,10 @@ pub struct QueryResult {
 }
 
 #[derive(Serialize, Debug, Default)]
-pub struct CollectionEntries {
-    pub ids: Vec<String>,
+pub struct CollectionEntries<'a> {
+    pub ids: Vec<&'a str>,
     pub metadatas: Option<Metadatas>,
-    pub documents: Option<Documents>,
+    pub documents: Option<Documents<'a>>,
     pub embeddings: Option<Embeddings>,
 }
 

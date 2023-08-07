@@ -5,4 +5,4 @@ pub(super) type Metadata = Map<String, Value>;
 pub(super) type Metadatas = Vec<Metadata>;
 pub(super) type Embedding = Vec<f32>;
 pub(super) type Embeddings = Vec<Embedding>;
-pub(super) type Documents = Vec<String>;
+pub(super) type Documents<'a> = Vec<&'a str>;
