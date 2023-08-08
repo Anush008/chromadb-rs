@@ -116,6 +116,50 @@ let query = QueryOptions {
 let query_result: QueryResult = collection.query(query, None)?;
 println!("Query result: {:?}", query_result);
 ```
+
+ ### Support for Embedding providers
+ This crate has built-in support for OpenAI and SBERT embeddings.
+
+ To use [OpenAI](https://platform.openai.com/docs/guides/embeddings) embeddings, enable the `openai` feature in your Cargo.toml.
+
+ ```rust
+let collection: ChromaCollection = client.get_or_create_collection("openai_collection", None)?;
+
+let collection_entries = CollectionEntries {
+   ids: vec!["demo-id-1", "demo-id-2"],
+   embeddings: None,
+   metadatas: None,
+   documents: Some(vec![
+            "Some document about 9 octopus recipies",
+            "Some other document about DCEU Superman Vs CW Superman"])
+ };
+
+// Use OpenAI embeddings
+let openai_embeddings = OpenAIEmbeddings::new(Default::default());
+
+collection.upsert(collection_entries, Some(Box::new(openai_embeddings)))?;
+ ```
+
+ To use [SBERT](https://docs.rs/crate/rust-bert/latest) embeddings, enable the `bert` feature in your Cargo.toml.
+
+ ```rust
+let collection_entries = CollectionEntries {
+   ids: vec!["demo-id-1", "demo-id-2"],
+   embeddings: None,
+   metadatas: None,
+   documents: Some(vec![
+            "Some document about 9 octopus recipies",
+            "Some other document about DCEU Superman Vs CW Superman"])
+ };
+
+ // Use SBERT embeddings
+let sbert_embeddings = SentenceEmbeddingsBuilder::remote(
+                         SentenceEmbeddingsModelType::AllMiniLmL6V2
+                        ).create_model()?;
+
+collection.upsert(collection_entries, Some(Box::new(sbert_embeddings)))?;
+ ```
+
 ## Sponsors
 
 [![OpenSauced logo](https://raw.githubusercontent.com/open-sauced/assets/main/logos/logo-on-dark.png)](https://opensauced.pizza?utm_source=chromadbrs&utm_medium=github&utm_campaign=sponsorship)

@@ -22,10 +22,13 @@ struct EmbeddingResponse {
     pub data: Vec<EmbeddingData>,
 }
 
+/// Represents the OpenAI Embeddings provider
 pub struct OpenAIEmbeddings {
     config: OpenAIConfig,
 }
 
+/// Defaults to the "text-embedding-ada-002" model
+/// The API key can be set in the OPENAI_API_KEY environment variable
 pub struct OpenAIConfig {
     pub api_endpoint: String,
     pub api_key: String,
