@@ -473,7 +473,7 @@ mod tests {
         ChromaClient,
     };
 
-    const TEST_COLLECTION: &str = "11-recipies-for-octopus";
+    const TEST_COLLECTION: &str = "21-recipies-for-octopus";
 
     #[test]
     fn test_create_collection() {
