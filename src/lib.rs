@@ -39,12 +39,12 @@
 //!
 //! // Upsert some embeddings with documents and no metadata.
 //! let collection_entries = CollectionEntries {
-//!    ids: vec!["demo-id-1".into(), "demo-id-2".into()],
-//!    embeddings: Some(vec![vec![0.0_f64; 768], vec![0.0_f64; 768]]),
+//!    ids: vec!["demo-id-1", "demo-id-2"],
+//!    embeddings: Some(vec![vec![0.0_f32; 768], vec![0.0_f32; 768]]),
 //!    metadatas: None,
 //!    documents: Some(vec![
-//!        "Some document about 9 octopus recipies".into(),
-//!        "Some other document about DCEU Superman Vs CW Superman".into()
+//!        "Some document about 9 octopus recipies",
+//!        "Some other document about DCEU Superman Vs CW Superman"
 //!    ])
 //! };
 //!
@@ -73,8 +73,8 @@
 //!# }
 //! ```
 //!Find more information about on the available filters and options in the [get()](crate::v1::ChromaCollection::get) documentation.
-//! 
-//! 
+//!
+//!
 //! ### Perform a similarity search.
 //! ```
 //!# use chromadb::v1::collection::{ChromaCollection, QueryResult, QueryOptions};
@@ -84,17 +84,74 @@
 //! //Alternatively, an embedding_function can also be provided with query_texts to perform the search
 //! let query = QueryOptions {
 //!     query_texts: None,
-//!     query_embeddings: Some(vec![vec![0.0_f64; 768], vec![0.0_f64; 768]]),
+//!     query_embeddings: Some(vec![vec![0.0_f32; 768], vec![0.0_f32; 768]]),
 //!     where_metadata: None,
 //!     where_document: None,
 //!     n_results: Some(5),
 //!     include: None,
 //! };
-//! 
+//!
 //! let query_result: QueryResult = collection.query(query, None)?;
 //! println!("Query result: {:?}", query_result);
-//!# Ok(()) 
+//!# Ok(())
 //!# }
 //! ```
-//! 
+//!
+//! ### Support for Embedding providers
+//! This crate has built-in support for OpenAI and SBERT embeddings.
+//!
+//! To use [OpenAI](https://platform.openai.com/docs/guides/embeddings) embeddings, enable the `openai` feature in your Cargo.toml.
+//!
+//! ```ignore
+//!# use chromadb::v1::ChromaClient;
+//!# use chromadb::v1::collection::{ChromaCollection, GetResult, CollectionEntries, GetOptions};
+//!# use chromadb::v1::embeddings::openai::OpenAIEmbeddings;
+//!# use serde_json::json;
+//!# fn doc_client_create_collection(client: &ChromaClient) -> anyhow::Result<()> {
+//! let collection: ChromaCollection = client.get_or_create_collection("openai_collection", None)?;
+//!
+//! let collection_entries = CollectionEntries {
+//!   ids: vec!["demo-id-1", "demo-id-2"],
+//!   embeddings: None,
+//!   metadatas: None,
+//!   documents: Some(vec![
+//!            "Some document about 9 octopus recipies",
+//!            "Some other document about DCEU Superman Vs CW Superman"])
+//! };
+//!
+//! // Use OpenAI embeddings
+//! let openai_embeddings = OpenAIEmbeddings::new(Default::default());
+//! collection.upsert(collection_entries, Some(Box::new(openai_embeddings)))?;
+//! Ok(())
+//!# }
+//! ```
+//!
+//! To use [SBERT](https://docs.rs/crate/rust-bert/latest) embeddings, enable the `bert` feature in your Cargo.toml.
+//!
+//! ```ignore
+//!# use chromadb::v1::ChromaClient;
+//!# use chromadb::v1::collection::{ChromaCollection, GetResult, CollectionEntries, GetOptions};
+//!# use serde_json::json;
+//!# use chromadb::v1::embeddings::bert::{SentenceEmbeddingsBuilder, SentenceEmbeddingsModelType};
+//!# fn doc_client_create_collection(client: &ChromaClient) -> anyhow::Result<()> {
+//! let collection: ChromaCollection = client.get_or_create_collection("sbert_collection", None)?;
+//!
+//! let collection_entries = CollectionEntries {
+//!   ids: vec!["demo-id-1", "demo-id-2"],
+//!   embeddings: None,
+//!   metadatas: None,
+//!   documents: Some(vec![
+//!            "Some document about 9 octopus recipies",
+//!            "Some other document about DCEU Superman Vs CW Superman"])
+//! };
+//!
+//! // Use SBERT embeddings
+//! let sbert_embeddings = SentenceEmbeddingsBuilder::remote(
+//!                         SentenceEmbeddingsModelType::AllMiniLmL6V2
+//!                        ).create_model()?;
+//!
+//! collection.upsert(collection_entries, Some(Box::new(sbert_embeddings)))?;
+//!# Ok(())
+//!# }
+//! ```
 pub mod v1;

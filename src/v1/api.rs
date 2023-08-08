@@ -21,7 +21,7 @@ impl APIClientV1 {
             path = path
         );
 
-        let res = minreq::post(&url)
+        let res = minreq::post(url)
             .with_header("Content-Type", "application/json")
             .with_json(&json_body)?
             .send()?;
@@ -43,7 +43,7 @@ impl APIClientV1 {
             api_endpoint = self.api_endpoint,
             path = path
         );
-        let res = minreq::get(&url).send()?;
+        let res = minreq::get(url).send()?;
         match res.status_code {
             200..=299 => Ok(res),
             _ => anyhow::bail!(
@@ -67,7 +67,7 @@ impl APIClientV1 {
             None => Value::Null,
         };
 
-        let res = minreq::put(&url)
+        let res = minreq::put(url)
             .with_header("Content-Type", "application/json")
             .with_json(&json_body)?
             .send()?;
@@ -88,7 +88,7 @@ impl APIClientV1 {
             api_endpoint = self.api_endpoint,
             path = path
         );
-        let res = minreq::delete(&url).send()?;
+        let res = minreq::delete(url).send()?;
         match res.status_code {
             200..=299 => Ok(res),
             _ => anyhow::bail!(

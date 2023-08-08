@@ -4,7 +4,7 @@ authors = ["Anush008"]
 description = "A Rust client library for the ChromaDB vector database."
 edition = "2021"
 license = "MIT"
-version = "0.3.0"
+version = "0.3.1"
 repository = "https://github.com/Anush008/chromadb-rs/"
 
 [dependencies.serde]
@@ -21,3 +21,12 @@ version = "1"
 
 [dependencies.serde_json]
 version = "1"
+
+[dependencies.rust-bert]
+version = "0.21"
+features = ["download-libtorch"]
+optional = true
+
+[features]
+bert = ["dep:rust-bert"]
+openai = []

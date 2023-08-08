@@ -1,5 +1,5 @@
 use anyhow::bail;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{collections::HashSet, sync::Arc, vec};
 
@@ -284,8 +284,7 @@ impl ChromaCollection {
             query_embeddings = Some(
                 embedding_function
                     .unwrap()
-                    .embed(query_texts.as_ref().unwrap())
-                    ,
+                    .embed(query_texts.as_ref().unwrap())?,
             );
         };
 
@@ -362,6 +361,7 @@ pub struct GetResult {
     pub embeddings: Option<Vec<Option<Embedding>>>,
 }
 
+#[derive(Serialize, Debug, Default)]
 pub struct GetOptions {
     pub ids: Vec<String>,
     pub where_metadata: Option<Value>,
@@ -371,13 +371,14 @@ pub struct GetOptions {
     pub include: Option<Vec<String>>,
 }
 
-pub struct QueryOptions {
+#[derive(Serialize, Debug, Default)]
+pub struct QueryOptions<'a> {
     pub query_embeddings: Option<Embeddings>,
-    pub query_texts: Option<Vec<String>>,
+    pub query_texts: Option<Vec<&'a str>>,
     pub n_results: Option<usize>,
     pub where_metadata: Option<Value>,
     pub where_document: Option<Value>,
-    pub include: Option<Vec<String>>,
+    pub include: Option<Vec<&'a str>>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -389,10 +390,11 @@ pub struct QueryResult {
     pub distances: Option<Vec<Option<Vec<f32>>>>,
 }
 
-pub struct CollectionEntries {
-    pub ids: Vec<String>,
+#[derive(Serialize, Debug, Default)]
+pub struct CollectionEntries<'a> {
+    pub ids: Vec<&'a str>,
     pub metadatas: Option<Metadatas>,
-    pub documents: Option<Documents>,
+    pub documents: Option<Documents<'a>>,
     pub embeddings: Option<Embeddings>,
 }
 
@@ -425,8 +427,7 @@ fn validate(
         embeddings = Some(
             embedding_function
                 .unwrap()
-                .embed(documents.as_ref().unwrap())
-                ,
+                .embed(documents.as_ref().unwrap())?,
         );
     }
 
@@ -472,7 +473,7 @@ mod tests {
         ChromaClient,
     };
 
-    const TEST_COLLECTION: &str = "11-recipies-for-octopus";
+    const TEST_COLLECTION: &str = "21-recipies-for-octopus";
 
     #[test]
     fn test_create_collection() {
@@ -498,7 +499,6 @@ mod tests {
         //Test for setting invalid collection name. Should fail.
         assert!(collection
             .modify(Some("new name for test collection"), None)
-            
             .is_err());
 
         //Test for setting new metadata. Should pass.
@@ -513,7 +513,6 @@ mod tests {
                     .unwrap()
                 )
             )
-            
             .is_ok());
     }
 
@@ -553,12 +552,10 @@ mod tests {
             embeddings: None,
         };
 
-        let response = collection
-            .add(
-                invalid_collection_entries,
-                Some(Box::new(MockEmbeddingProvider)),
-            )
-            ;
+        let response = collection.add(
+            invalid_collection_entries,
+            Some(Box::new(MockEmbeddingProvider)),
+        );
         assert!(
             response.is_err(),
             "Embeddings and documents cannot both be None"
@@ -573,12 +570,10 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection
-            .add(
-                invalid_collection_entries,
-                Some(Box::new(MockEmbeddingProvider)),
-            )
-            ;
+        let response = collection.add(
+            invalid_collection_entries,
+            Some(Box::new(MockEmbeddingProvider)),
+        );
         assert!(
             response.is_err(),
             "IDs, embeddings, metadatas, and documents must all be the same length"
@@ -593,12 +588,10 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection
-            .add(
-                valid_collection_entries,
-                Some(Box::new(MockEmbeddingProvider)),
-            )
-            ;
+        let response = collection.add(
+            valid_collection_entries,
+            Some(Box::new(MockEmbeddingProvider)),
+        );
         assert!(
             response.is_ok(),
             "IDs, embeddings, metadatas, and documents must all be the same length"
@@ -613,12 +606,10 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection
-            .add(
-                invalid_collection_entries,
-                Some(Box::new(MockEmbeddingProvider)),
-            )
-            ;
+        let response = collection.add(
+            invalid_collection_entries,
+            Some(Box::new(MockEmbeddingProvider)),
+        );
         assert!(response.is_err(), "Empty IDs not allowed");
 
         let invalid_collection_entries = CollectionEntries {
@@ -660,9 +651,7 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection
-            .add(collection_entries, Some(Box::new(MockEmbeddingProvider)))
-            ;
+        let response = collection.add(collection_entries, Some(Box::new(MockEmbeddingProvider)));
         assert!(
             response.is_ok(),
             "Embeddings are computed by the embedding_function if embeddings are None and documents are provided"
@@ -684,12 +673,10 @@ mod tests {
             embeddings: None,
         };
 
-        let response = collection
-            .upsert(
-                invalid_collection_entries,
-                Some(Box::new(MockEmbeddingProvider)),
-            )
-            ;
+        let response = collection.upsert(
+            invalid_collection_entries,
+            Some(Box::new(MockEmbeddingProvider)),
+        );
         assert!(
             response.is_err(),
             "Embeddings and documents cannot both be None"
@@ -704,12 +691,10 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection
-            .upsert(
-                invalid_collection_entries,
-                Some(Box::new(MockEmbeddingProvider)),
-            )
-            ;
+        let response = collection.upsert(
+            invalid_collection_entries,
+            Some(Box::new(MockEmbeddingProvider)),
+        );
         assert!(
             response.is_err(),
             "IDs, embeddings, metadatas, and documents must all be the same length"
@@ -724,12 +709,10 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection
-            .upsert(
-                valid_collection_entries,
-                Some(Box::new(MockEmbeddingProvider)),
-            )
-            ;
+        let response = collection.upsert(
+            valid_collection_entries,
+            Some(Box::new(MockEmbeddingProvider)),
+        );
         assert!(
             response.is_ok(),
             "IDs, embeddings, metadatas, and documents must all be the same length"
@@ -744,12 +727,10 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection
-            .upsert(
-                invalid_collection_entries,
-                Some(Box::new(MockEmbeddingProvider)),
-            )
-            ;
+        let response = collection.upsert(
+            invalid_collection_entries,
+            Some(Box::new(MockEmbeddingProvider)),
+        );
         assert!(response.is_err(), "Empty IDs not allowed");
 
         let invalid_collection_entries = CollectionEntries {
@@ -791,9 +772,7 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection
-            .upsert(collection_entries, Some(Box::new(MockEmbeddingProvider)))
-            ;
+        let response = collection.upsert(collection_entries, Some(Box::new(MockEmbeddingProvider)));
         assert!(
             response.is_ok(),
             "Embeddings are computed by the embedding_function if embeddings are None and documents are provided"
@@ -815,12 +794,10 @@ mod tests {
             embeddings: None,
         };
 
-        let response = collection
-            .update(
-                valid_collection_entries,
-                Some(Box::new(MockEmbeddingProvider)),
-            )
-            ;
+        let response = collection.update(
+            valid_collection_entries,
+            Some(Box::new(MockEmbeddingProvider)),
+        );
         assert!(
             response.is_ok(),
             "Embeddings and documents can both be None"
@@ -835,12 +812,10 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection
-            .update(
-                invalid_collection_entries,
-                Some(Box::new(MockEmbeddingProvider)),
-            )
-            ;
+        let response = collection.update(
+            invalid_collection_entries,
+            Some(Box::new(MockEmbeddingProvider)),
+        );
         assert!(
             response.is_err(),
             "IDs, embeddings, metadatas, and documents must all be the same length"
@@ -855,12 +830,10 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection
-            .update(
-                valid_collection_entries,
-                Some(Box::new(MockEmbeddingProvider)),
-            )
-            ;
+        let response = collection.update(
+            valid_collection_entries,
+            Some(Box::new(MockEmbeddingProvider)),
+        );
         assert!(
             response.is_ok(),
             "IDs, embeddings, metadatas, and documents must all be the same length"
@@ -875,12 +848,10 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection
-            .update(
-                invalid_collection_entries,
-                Some(Box::new(MockEmbeddingProvider)),
-            )
-            ;
+        let response = collection.update(
+            invalid_collection_entries,
+            Some(Box::new(MockEmbeddingProvider)),
+        );
         assert!(response.is_err(), "Empty IDs not allowed");
 
         let invalid_collection_entries = CollectionEntries {
@@ -922,9 +893,7 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection
-            .update(collection_entries, Some(Box::new(MockEmbeddingProvider)))
-            ;
+        let response = collection.update(collection_entries, Some(Box::new(MockEmbeddingProvider)));
         assert!(
             response.is_ok(),
             "Embeddings are computed by the embedding_function if embeddings are None and documents are provided"
@@ -965,9 +934,7 @@ mod tests {
             n_results: None,
             include: None,
         };
-        let query_result = collection
-            .query(query, Some(Box::new(MockEmbeddingProvider)))
-            ;
+        let query_result = collection.query(query, Some(Box::new(MockEmbeddingProvider)));
         assert!(
             query_result.is_ok(),
             "query_embeddings will be computed from query_texts if embedding_function is provided"
@@ -978,15 +945,13 @@ mod tests {
                 "Writing tests help me find bugs".into(),
                 "Running them does not".into(),
             ]),
-            query_embeddings: Some(vec![vec![0.0_f64; 768], vec![0.0_f64; 768]]),
+            query_embeddings: Some(vec![vec![0.0_f32; 768], vec![0.0_f32; 768]]),
             where_metadata: None,
             where_document: None,
             n_results: None,
             include: None,
         };
-        let query_result = collection
-            .query(query, Some(Box::new(MockEmbeddingProvider)))
-            ;
+        let query_result = collection.query(query, Some(Box::new(MockEmbeddingProvider)));
         assert!(
             query_result.is_err(),
             "Both query_embeddings and query_texts cannot be provided"
@@ -994,7 +959,7 @@ mod tests {
 
         let query = QueryOptions {
             query_texts: None,
-            query_embeddings: Some(vec![vec![0.0_f64; 768], vec![0.0_f64; 768]]),
+            query_embeddings: Some(vec![vec![0.0_f32; 768], vec![0.0_f32; 768]]),
             where_metadata: None,
             where_document: None,
             n_results: None,
