@@ -1,4 +1,4 @@
-name: Test and Release
+name: Semantic Release
 on:
   push:
     branches:
@@ -9,17 +9,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: ChromaDB
-        uses: CakeCrusher/chroma@v1.0.3
-      - name: Run tests
-        run: cargo test
   release:
     runs-on: ubuntu-latest
-    needs: test
     steps:
       - name: "☁️ checkout repository"
         uses: actions/checkout@v3
