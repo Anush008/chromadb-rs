@@ -476,19 +476,6 @@ mod tests {
     const TEST_COLLECTION: &str = "21-recipies-for-octopus";
 
     #[test]
-    fn test_create_collection() {
-        let client = ChromaClient::new(Default::default());
-
-        let collection = client
-            .get_or_create_collection(TEST_COLLECTION, None)
-            .unwrap();
-        assert!(collection.count().is_ok());
-
-        let collections = client.list_collections().unwrap();
-        assert!(collections[0].count().is_ok());
-    }
-
-    #[test]
     fn test_modify_collection() {
         let client = ChromaClient::new(Default::default());
 

@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@semantic-release/git": "^10.0.1",
+    "semantic-release-cargo": "^2.2.7"
+  }
+}
