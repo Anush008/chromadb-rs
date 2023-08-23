@@ -1,10 +1,11 @@
 name: Test and Release
-'on':
+on:
   push:
     branches:
-      - master
+      - main
       - beta
-      - next
+  workflow_dispatch:
+  
 env:
   CARGO_TERM_COLOR: always
 jobs:
