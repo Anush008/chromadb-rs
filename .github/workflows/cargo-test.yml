@@ -1,13 +1,10 @@
-name: Cargo tests
+name: Test and Release
 'on':
   push:
     branches:
       - master
       - beta
-  pull_request:
-    branches:
-      - master
-      - beta
+      - next
 env:
   CARGO_TERM_COLOR: always
 jobs:
@@ -21,17 +18,36 @@ jobs:
         run: cargo test
   release:
     runs-on: ubuntu-latest
+    needs: test
     steps:
-      - uses: actions/checkout@v3
-      - name: Semantic Release
-        uses: cycjimmy/semantic-release-action@v3
+      - name: "☁️ checkout repository"
+        uses: actions/checkout@v3
         with:
-          extra_plugins: |
-            @semantic-release/commit-analyzer
-            @semantic-release/release-notes-generator
-            @semantic-release/github
-            semantic-release-cargo
+          fetch-depth: 0
+
+      - name: "🔧 setup node"
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: "🔧 install npm@latest"
+        run: npm i -g npm@latest
+
+      - name: "📦 install dependencies"
+        uses: bahmutov/npm-install@v1
+
+      - name: "Semantic release🚀"
+        id: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+            npx semantic-release
+  
+      - name: "echo outputs"
+        run: |
+          echo "RELEASE_TAG: ${{ env.RELEASE_TAG }}"
+          echo "RELEASE_VERSION: ${{ env.RELEASE_VERSION }}"
+          echo "outputs.release-tag: ${{ steps.release.outputs.release-tag }}"
+          echo "outputs.release-version: ${{ steps.release.outputs.release-version }}"
       
