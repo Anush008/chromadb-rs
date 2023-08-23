@@ -2,7 +2,7 @@ name: Test and Release
 on:
   push:
     branches:
-      - main
+      - master
       - beta
   workflow_dispatch:
   
