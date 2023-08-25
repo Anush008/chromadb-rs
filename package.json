@@ -1,6 +1,5 @@
 {
   "devDependencies": {
-    "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "conventional-changelog-conventionalcommits": "^6.1.0",
     "semantic-release-cargo": "^2.2.7"
