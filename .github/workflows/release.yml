@@ -17,11 +17,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: "🔧 setup Bun"
-        uses: oven-sh/setup-bun@v1
+      - name: "🔧 setup node"
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: "🔧 install npm@latest"
+        run: npm i -g npm@latest
 
       - name: "📦 install dependencies"
-        run: bun install
+        uses: bahmutov/npm-install@v1
 
       - name: "Semantic release🚀"
         id: release
@@ -29,7 +34,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
-            bun x semantic-release
+            npx semantic-release
   
       - name: "echo outputs"
         run: |
