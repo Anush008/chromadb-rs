@@ -105,7 +105,7 @@ impl ChromaCollection {
 
         let path = format!("/collections/{}/add", self.id);
         let response = self.api.post(&path, Some(json_body))?;
-        let response = response.json::<bool>()?;
+        let response = response.json::<Value>()?;
 
         Ok(response)
     }
@@ -152,7 +152,7 @@ impl ChromaCollection {
 
         let path = format!("/collections/{}/upsert", self.id);
         let response = self.api.post(&path, Some(json_body))?;
-        let response = response.json::<bool>()?;
+        let response = response.json::<Value>()?;
 
         Ok(response)
     }
