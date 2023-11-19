@@ -86,7 +86,7 @@ impl ChromaCollection {
         &self,
         collection_entries: CollectionEntries,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
-    ) -> Result<bool> {
+    ) -> Result<Value> {
         let collection_entries = validate(true, collection_entries, embedding_function)?;
 
         let CollectionEntries {
@@ -133,7 +133,7 @@ impl ChromaCollection {
         &self,
         collection_entries: CollectionEntries,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
-    ) -> Result<bool> {
+    ) -> Result<Value> {
         let collection_entries = validate(true, collection_entries, embedding_function)?;
 
         let CollectionEntries {
