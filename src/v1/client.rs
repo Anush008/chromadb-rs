@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+pub use super::api::{ChromaAuthMethod, ChromaTokenHeader};
 use super::{
     api::APIClientV1,
     commons::{Metadata, Result},
@@ -17,23 +18,24 @@ pub struct ChromaClient {
 }
 
 /// The options for instantiating ChromaClient.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct ChromaClientOptions {
     pub url: String,
+    pub auth: ChromaAuthMethod,
 }
 
 impl ChromaClient {
     /// Create a new Chroma client with the given options.
     /// * Defaults to `url`: http://localhost:8000
-    pub fn new(options: ChromaClientOptions) -> ChromaClient {
-        let endpoint = if options.url.is_empty() {
+    pub fn new(ChromaClientOptions { url, auth }: ChromaClientOptions) -> ChromaClient {
+        let endpoint = if url.is_empty() {
             std::env::var("CHROMA_URL").unwrap_or(DEFAULT_ENDPOINT.to_string())
         } else {
-            options.url
+            url
         };
 
         ChromaClient {
-            api: Arc::new(APIClientV1::new(endpoint)),
+            api: Arc::new(APIClientV1::new(endpoint, auth)),
         }
     }
 
