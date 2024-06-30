@@ -1,20 +1,33 @@
 name: "Cargo Tests"
 on:
-    pull_request:
-      types:
-        - opened
-        - edited
-        - synchronize
-        - reopened
-  
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
 env:
   CARGO_TERM_COLOR: always
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: ChromaDB
-        uses: CakeCrusher/chroma@v1.0.3
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: chroma-core/chroma
+          path: chroma
+          ref: 0.5.2
+      - name: Start server by running docker-compose
+        run: cd ./chroma && docker-compose up -d
+        shell: bash
+      - name: Wait for server to be ready
+        run: |
+          while ! curl -s http://localhost:8000 > /dev/null; do
+            echo "Waiting for server..."
+            sleep 5
+          done
+        shell: bash
       - name: Run tests
         run: cargo test
