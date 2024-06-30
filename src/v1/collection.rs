@@ -533,7 +533,7 @@ mod tests {
             .unwrap();
 
         let invalid_collection_entries = CollectionEntries {
-            ids: vec!["test1".into()],
+            ids: vec!["test1"],
             metadatas: None,
             documents: None,
             embeddings: None,
@@ -549,11 +549,11 @@ mod tests {
         );
 
         let invalid_collection_entries = CollectionEntries {
-            ids: vec!["test".into()],
+            ids: vec!["test"],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: None,
         };
@@ -567,11 +567,11 @@ mod tests {
         );
 
         let valid_collection_entries = CollectionEntries {
-            ids: vec!["test1".into(), "test2".into()],
+            ids: vec!["test1", "test2"],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: None,
         };
@@ -585,11 +585,11 @@ mod tests {
         );
 
         let invalid_collection_entries = CollectionEntries {
-            ids: vec!["test1".into(), "".into()],
+            ids: vec!["test1", ""],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: None,
         };
@@ -600,11 +600,11 @@ mod tests {
         assert!(response.is_err(), "Empty IDs not allowed");
 
         let invalid_collection_entries = CollectionEntries {
-            ids: vec!["test".into(), "test".into()],
+            ids: vec!["test", "test"],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: Some(vec![vec![1.0, 2.0], vec![3.0, 4.0]]),
         };
@@ -615,11 +615,11 @@ mod tests {
         );
 
         let collection_entries = CollectionEntries {
-            ids: vec!["test1".into(), "test2".into()],
+            ids: vec!["test1", "test2"],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: None,
         };
@@ -630,11 +630,11 @@ mod tests {
         );
 
         let collection_entries = CollectionEntries {
-            ids: vec!["test1".into(), "test2".into()],
+            ids: vec!["test1", "test2"],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: None,
         };
@@ -654,7 +654,7 @@ mod tests {
             .unwrap();
 
         let invalid_collection_entries = CollectionEntries {
-            ids: vec!["test1".into()],
+            ids: vec!["test1"],
             metadatas: None,
             documents: None,
             embeddings: None,
@@ -670,11 +670,11 @@ mod tests {
         );
 
         let invalid_collection_entries = CollectionEntries {
-            ids: vec!["test".into()],
+            ids: vec!["test"],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: None,
         };
@@ -688,11 +688,11 @@ mod tests {
         );
 
         let valid_collection_entries = CollectionEntries {
-            ids: vec!["test1".into(), "test2".into()],
+            ids: vec!["test1", "test2"],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: None,
         };
@@ -706,11 +706,11 @@ mod tests {
         );
 
         let invalid_collection_entries = CollectionEntries {
-            ids: vec!["test1".into(), "".into()],
+            ids: vec!["test1", ""],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: None,
         };
@@ -721,11 +721,11 @@ mod tests {
         assert!(response.is_err(), "Empty IDs not allowed");
 
         let invalid_collection_entries = CollectionEntries {
-            ids: vec!["test".into(), "test".into()],
+            ids: vec!["test", "test"],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: Some(vec![vec![1.0, 2.0], vec![3.0, 4.0]]),
         };
@@ -736,11 +736,11 @@ mod tests {
         );
 
         let collection_entries = CollectionEntries {
-            ids: vec!["test1".into(), "test2".into()],
+            ids: vec!["test1", "test2"],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: None,
         };
@@ -751,11 +751,11 @@ mod tests {
         );
 
         let collection_entries = CollectionEntries {
-            ids: vec!["test1".into(), "test2".into()],
+            ids: vec!["test1", "test2"],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: None,
         };
@@ -775,7 +775,7 @@ mod tests {
             .unwrap();
 
         let valid_collection_entries = CollectionEntries {
-            ids: vec!["test1".into()],
+            ids: vec!["test1"],
             metadatas: None,
             documents: None,
             embeddings: None,
@@ -791,11 +791,11 @@ mod tests {
         );
 
         let invalid_collection_entries = CollectionEntries {
-            ids: vec!["test".into()],
+            ids: vec!["test"],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: None,
         };
@@ -809,11 +809,11 @@ mod tests {
         );
 
         let valid_collection_entries = CollectionEntries {
-            ids: vec!["test1".into(), "test2".into()],
+            ids: vec!["test1", "test2"],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: None,
         };
@@ -827,11 +827,11 @@ mod tests {
         );
 
         let invalid_collection_entries = CollectionEntries {
-            ids: vec!["test1".into(), "".into()],
+            ids: vec!["test1", ""],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: None,
         };
@@ -842,11 +842,11 @@ mod tests {
         assert!(response.is_err(), "Empty IDs not allowed");
 
         let invalid_collection_entries = CollectionEntries {
-            ids: vec!["test".into(), "test".into()],
+            ids: vec!["test", "test"],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: Some(vec![vec![1.0, 2.0], vec![3.0, 4.0]]),
         };
@@ -857,11 +857,11 @@ mod tests {
         );
 
         let collection_entries = CollectionEntries {
-            ids: vec!["test1".into(), "test2".into()],
+            ids: vec!["test1", "test2"],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: None,
         };
@@ -872,11 +872,11 @@ mod tests {
         );
 
         let collection_entries = CollectionEntries {
-            ids: vec!["test1".into(), "test2".into()],
+            ids: vec!["test1", "test2"],
             metadatas: None,
             documents: Some(vec![
-                "Document content 1".into(),
-                "Document content 2".into(),
+                "Document content 1",
+                "Document content 2",
             ]),
             embeddings: None,
         };
@@ -912,8 +912,8 @@ mod tests {
 
         let query = QueryOptions {
             query_texts: Some(vec![
-                "Writing tests help me find bugs".into(),
-                "Running them does not".into(),
+                "Writing tests help me find bugs",
+                "Running them does not",
             ]),
             query_embeddings: None,
             where_metadata: None,
@@ -929,8 +929,8 @@ mod tests {
 
         let query = QueryOptions {
             query_texts: Some(vec![
-                "Writing tests help me find bugs".into(),
-                "Running them does not".into(),
+                "Writing tests help me find bugs",
+                "Running them does not",
             ]),
             query_embeddings: Some(vec![vec![0.0_f32; 768], vec![0.0_f32; 768]]),
             where_metadata: None,
