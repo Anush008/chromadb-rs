@@ -215,7 +215,7 @@ mod tests {
         let client: ChromaClient = ChromaClient::new(Default::default());
 
         let result = client.list_collections().unwrap();
-        assert!(result.len() > 0);
+        assert!(!result.is_empty());
     }
 
     #[test]
