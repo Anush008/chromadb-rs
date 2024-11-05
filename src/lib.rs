@@ -1,13 +1,13 @@
 //! [ChromaDB](https://www.trychroma.com/) client library for Rust.
 //!
-//! The library provides 2 modules to interact with the ChromaDB server via API V1:
+//! The library provides 2 modules to interact with the ChromaDB server via API V2:
 //! * `client` - To interface with the ChromaDB server.
 //! * `collection` - To interface with an associated ChromaDB collection.
 //!
-//! ### Instantiating [ChromaClient](crate::v1::ChromaClient)
+//! ### Instantiating [ChromaClient](crate::v2::ChromaClient)
 //! ```
-//! use chromadb::v1::client::{ChromaClient, ChromaClientOptions};
-//! use chromadb::v1::collection::{ChromaCollection, GetResult, GetOptions};
+//! use chromadb::v2::client::{ChromaAuthMethod, ChromaClient, ChromaClientOptions};
+//! use chromadb::v2::collection::{ChromaCollection, GetResult, GetOptions};
 //! use serde_json::json;
 //!
 //!# fn doc_client_demo() -> anyhow::Result<()> {
@@ -16,7 +16,14 @@
 //! let client: ChromaClient = ChromaClient::new(Default::default());
 //!
 //! // With custom ChromaClientOptions
-//! let client: ChromaClient = ChromaClient::new(ChromaClientOptions { url: "<CHROMADB_URL>".into() });
+//! let auth = ChromaAuthMethod::TokenAuth { 
+//!     token: "<TOKEN>".to_string(), 
+//!     header: chromadb::v2::client::ChromaTokenHeader::Authorization 
+//! };
+//! let client: ChromaClient = ChromaClient::new(ChromaClientOptions { 
+//!     url: "<CHROMADB_URL>".into(),
+//!     auth 
+//! });
 //!
 //! # Ok(())
 //! # }
@@ -26,12 +33,12 @@
 //! ### Collection Queries
 //!
 //! ```
-//!# use chromadb::v1::ChromaClient;
-//!# use chromadb::v1::collection::{ChromaCollection, GetResult, CollectionEntries, GetOptions};
+//!# use chromadb::v2::ChromaClient;
+//!# use chromadb::v2::collection::{ChromaCollection, GetResult, CollectionEntries, GetOptions};
 //!# use serde_json::json;
-//!# fn doc_client_create_collection(client: &ChromaClient) -> anyhow::Result<()> {
+//!# async fn doc_client_create_collection(client: &ChromaClient) -> anyhow::Result<()> {
 //! // Get or create a collection with the given name and no metadata.
-//! let collection: ChromaCollection = client.get_or_create_collection("my_collection", None)?;
+//! let collection: ChromaCollection = client.get_or_create_collection("my_collection", None).await?;
 //!
 //! // Get the UUID of the collection
 //! let collection_uuid = collection.id();
@@ -48,7 +55,7 @@
 //!    ])
 //! };
 //!
-//! let result: bool = collection.upsert(collection_entries, None)?;
+//! let result  = collection.upsert(collection_entries, None).await?;
 //!
 //! // Create a filter object to filter by document content.
 //! let where_document = json!({
@@ -67,19 +74,19 @@
 //!     include: Some(vec!["documents".into(),"embeddings".into()])
 //! };
 //!
-//! let get_result: GetResult = collection.get(get_query)?;
+//! let get_result: GetResult = collection.get(get_query).await?;
 //! println!("Get result: {:?}", get_result);
 //!# Ok(())
 //!# }
 //! ```
-//!Find more information about on the available filters and options in the [get()](crate::v1::ChromaCollection::get) documentation.
+//!Find more information about on the available filters and options in the [get()](crate::v2::ChromaCollection::get) documentation.
 //!
 //!
 //! ### Perform a similarity search.
 //! ```
-//!# use chromadb::v1::collection::{ChromaCollection, QueryResult, QueryOptions};
+//!# use chromadb::v2::collection::{ChromaCollection, QueryResult, QueryOptions};
 //!# use serde_json::json;
-//!# fn doc_query_collection(collection: &ChromaCollection) -> anyhow::Result<()> {
+//!# async fn doc_query_collection(collection: &ChromaCollection) -> anyhow::Result<()> {
 //! //Instantiate QueryOptions to perform a similarity search on the collection
 //! //Alternatively, an embedding_function can also be provided with query_texts to perform the search
 //! let query = QueryOptions {
@@ -91,7 +98,7 @@
 //!     include: None,
 //! };
 //!
-//! let query_result: QueryResult = collection.query(query, None)?;
+//! let query_result: QueryResult = collection.query(query, None).await?;
 //! println!("Query result: {:?}", query_result);
 //!# Ok(())
 //!# }
@@ -103,12 +110,13 @@
 //! To use [OpenAI](https://platform.openai.com/docs/guides/embeddings) embeddings, enable the `openai` feature in your Cargo.toml.
 //!
 //! ```ignore
-//!# use chromadb::v1::ChromaClient;
-//!# use chromadb::v1::collection::{ChromaCollection, GetResult, CollectionEntries, GetOptions};
-//!# use chromadb::v1::embeddings::openai::OpenAIEmbeddings;
+//!# use chromadb::v2::ChromaClient;
+//!# use chromadb::v2::collection::{ChromaCollection, GetResult, CollectionEntries, GetOptions};
+//!# use chromadb::v2::embeddings::openai::OpenAIEmbeddings;
 //!# use serde_json::json;
-//!# fn doc_client_create_collection(client: &ChromaClient) -> anyhow::Result<()> {
-//! let collection: ChromaCollection = client.get_or_create_collection("openai_collection", None)?;
+//!# async fn doc_client_create_collection(client: &ChromaClient) -> anyhow::Result<()> {
+//! let collection: ChromaCollection = client.get_or_create_collection("openai_collection",
+//! None).await?;
 //!
 //! let collection_entries = CollectionEntries {
 //!   ids: vec!["demo-id-1", "demo-id-2"],
@@ -121,7 +129,7 @@
 //!
 //! // Use OpenAI embeddings
 //! let openai_embeddings = OpenAIEmbeddings::new(Default::default());
-//! collection.upsert(collection_entries, Some(Box::new(openai_embeddings)))?;
+//! collection.upsert(collection_entries, Some(Box::new(openai_embeddings))).await?;
 //! Ok(())
 //!# }
 //! ```
@@ -129,12 +137,13 @@
 //! To use [SBERT](https://docs.rs/crate/rust-bert/latest) embeddings, enable the `bert` feature in your Cargo.toml.
 //!
 //! ```ignore
-//!# use chromadb::v1::ChromaClient;
-//!# use chromadb::v1::collection::{ChromaCollection, GetResult, CollectionEntries, GetOptions};
+//!# use chromadb::v2::ChromaClient;
+//!# use chromadb::v2::collection::{ChromaCollection, GetResult, CollectionEntries, GetOptions};
 //!# use serde_json::json;
-//!# use chromadb::v1::embeddings::bert::{SentenceEmbeddingsBuilder, SentenceEmbeddingsModelType};
-//!# fn doc_client_create_collection(client: &ChromaClient) -> anyhow::Result<()> {
-//! let collection: ChromaCollection = client.get_or_create_collection("sbert_collection", None)?;
+//!# use chromadb::v2::embeddings::bert::{SentenceEmbeddingsBuilder, SentenceEmbeddingsModelType};
+//!# async fn doc_client_create_collection(client: &ChromaClient) -> anyhow::Result<()> {
+//! let collection: ChromaCollection = client.get_or_create_collection("sbert_collection",
+//! None).await?;
 //!
 //! let collection_entries = CollectionEntries {
 //!   ids: vec!["demo-id-1", "demo-id-2"],
@@ -150,8 +159,9 @@
 //!                         SentenceEmbeddingsModelType::AllMiniLmL6V2
 //!                        ).create_model()?;
 //!
-//! collection.upsert(collection_entries, Some(Box::new(sbert_embeddings)))?;
+//! collection.upsert(collection_entries, Some(Box::new(sbert_embeddings))).await?;
 //!# Ok(())
 //!# }
 //! ```
-pub mod r#async;
+
+pub mod v2;

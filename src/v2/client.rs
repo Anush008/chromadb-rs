@@ -208,9 +208,16 @@ mod tests {
     #[tokio::test]
     async fn test_get_collection() {
         let client: ChromaClient = ChromaClient::new(Default::default());
+        
+        const GET_TEST_COLLECTION: &str = "100-recipes-for-octopus";
 
-        let collection = client.get_collection(TEST_COLLECTION).await.unwrap();
-        assert_eq!(collection.name(), TEST_COLLECTION);
+        client
+            .create_collection(GET_TEST_COLLECTION, None, true)
+            .await
+            .unwrap();
+
+        let collection = client.get_collection(GET_TEST_COLLECTION).await.unwrap();
+        assert_eq!(collection.name(), GET_TEST_COLLECTION);
     }
 
     #[tokio::test]

@@ -219,7 +219,7 @@ impl ChromaCollection {
         &self,
         collection_entries: CollectionEntries<'a>,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
-    ) -> Result<bool> {
+    ) -> Result<()> {
         let collection_entries = validate(false, collection_entries, embedding_function)?;
 
         let CollectionEntries {
@@ -238,9 +238,13 @@ impl ChromaCollection {
 
         let path = format!("/collections/{}/update", self.id);
         let response = self.api.post(&path, Some(json_body)).await?;
-        let response = response.json::<bool>().await?;
 
-        Ok(response)
+        match response.error_for_status() {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                Err(e.into())
+            }
+        }
     }
 
     ///Get the n_results nearest neighbor embeddings for provided query_embeddings or query_texts.
@@ -467,7 +471,7 @@ fn validate(
 mod tests {
     use serde_json::json;
 
-    use crate::r#async::{
+    use crate::v2::{
         collection::{CollectionEntries, GetOptions, QueryOptions},
         embeddings::MockEmbeddingProvider,
         ChromaClient,
@@ -524,6 +528,7 @@ mod tests {
             where_document: None,
             include: None,
         };
+
         let get_result = collection.get(get_query).await.unwrap();
         assert_eq!(get_result.ids.len(), collection.count().await.unwrap());
     }
@@ -791,9 +796,12 @@ mod tests {
         let response = collection.update(
             valid_collection_entries,
             Some(Box::new(MockEmbeddingProvider)),
-        );
+        ).await;
+
+        println!("{:?}", response);
+
         assert!(
-            response.await.is_ok(),
+            response.is_ok(),
             "Embeddings and documents can both be None"
         );
 

@@ -87,9 +87,9 @@ impl EmbeddingFunction for OpenAIEmbeddings {
 
 #[cfg(test)]
 mod tests {
-    use crate::v1::collection::CollectionEntries;
+    use crate::v2::collection::CollectionEntries;
     use super::*;
-    use crate::v1::ChromaClient;
+    use crate::v2::ChromaClient;
 
     #[test]
     fn test_openai_embeddings() {
