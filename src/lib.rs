@@ -154,5 +154,4 @@
 //!# Ok(())
 //!# }
 //! ```
-pub mod v1;
 pub mod r#async;
