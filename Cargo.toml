@@ -1,6 +1,6 @@
 [package]
 name = "chromadb"
-authors = ["Anush008"]
+authors = ["Anush008", "danwritecode"]
 description = "A Rust client library for the ChromaDB vector database."
 edition = "2021"
 license = "MIT"
