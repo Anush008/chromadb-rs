@@ -14,12 +14,13 @@ mod tests {
     use crate::v2::ChromaClient;
     use super::*;
 
-    #[test]
-    fn test_sbert_embeddings() {
+    #[tokio::test]
+    async fn test_sbert_embeddings() {
 
         let client = ChromaClient::new(Default::default());
         let collection = client
             .get_or_create_collection("sbert-test-collection", None)
+            .await
             .unwrap();
 
         let sbert_embedding =
@@ -42,6 +43,7 @@ mod tests {
 
         collection
             .upsert(collection_entries, Some(Box::new(sbert_embedding)))
+            .await
             .unwrap();
     }
 }
