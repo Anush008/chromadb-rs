@@ -87,7 +87,7 @@ impl ChromaCollection {
         collection_entries: CollectionEntries<'a>,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
     ) -> Result<Value> {
-        let collection_entries = validate(true, collection_entries, embedding_function)?;
+        let collection_entries = validate(true, collection_entries, embedding_function).await?;
 
         let CollectionEntries {
             ids,
@@ -134,7 +134,7 @@ impl ChromaCollection {
         collection_entries: CollectionEntries<'a>,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
     ) -> Result<Value> {
-        let collection_entries = validate(true, collection_entries, embedding_function)?;
+        let collection_entries = validate(true, collection_entries, embedding_function).await?;
 
         let CollectionEntries {
             ids,
@@ -220,7 +220,7 @@ impl ChromaCollection {
         collection_entries: CollectionEntries<'a>,
         embedding_function: Option<Box<dyn EmbeddingFunction>>,
     ) -> Result<()> {
-        let collection_entries = validate(false, collection_entries, embedding_function)?;
+        let collection_entries = validate(false, collection_entries, embedding_function).await?;
 
         let CollectionEntries {
             ids,
@@ -288,7 +288,7 @@ impl ChromaCollection {
             query_embeddings = Some(
                 embedding_function
                     .unwrap()
-                    .embed(query_texts.as_ref().unwrap())?,
+                    .embed(query_texts.as_ref().unwrap()).await?,
             );
         };
 
@@ -402,9 +402,9 @@ pub struct CollectionEntries<'a> {
     pub embeddings: Option<Embeddings>,
 }
 
-fn validate(
+async fn validate<'a>(
     require_embeddings_or_documents: bool,
-    collection_entries: CollectionEntries,
+    collection_entries: CollectionEntries<'a>,
     embedding_function: Option<Box<dyn EmbeddingFunction>>,
 ) -> Result<CollectionEntries> {
     let CollectionEntries {
@@ -431,7 +431,7 @@ fn validate(
         embeddings = Some(
             embedding_function
                 .unwrap()
-                .embed(documents.as_ref().unwrap())?,
+                .embed(documents.as_ref().unwrap()).await?,
         );
     }
 

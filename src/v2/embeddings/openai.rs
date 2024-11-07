@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -72,6 +73,7 @@ impl OpenAIEmbeddings {
     }
 }
 
+#[async_trait]
 impl EmbeddingFunction for OpenAIEmbeddings {
     async fn embed(&self, docs: &[&str]) -> anyhow::Result<Vec<Embedding>> {
         let mut embeddings = Vec::new();
