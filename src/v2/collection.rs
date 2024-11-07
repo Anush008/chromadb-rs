@@ -342,7 +342,7 @@ impl ChromaCollection {
         ids: Option<Vec<&str>>,
         where_metadata: Option<Value>,
         where_document: Option<Value>,
-    ) -> Result<Vec<String>> {
+    ) -> Result<()> {
         let json_body = json!({
             "ids": ids,
             "where": where_metadata,
@@ -351,9 +351,13 @@ impl ChromaCollection {
 
         let path = format!("/collections/{}/delete", self.id);
         let response = self.api.post(&path, Some(json_body)).await?;
-        let response = response.json::<Vec<String>>().await?;
 
-        Ok(response)
+        match response.error_for_status() {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                Err(e.into())
+            }
+        }
     }
 }
 
@@ -972,6 +976,37 @@ mod tests {
         assert!(
             query_result.await.is_ok(),
             "Use provided query_embeddings if embedding_function is None"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_delete_from_collection() {
+        let client = ChromaClient::new(Default::default());
+
+        let collection = client
+            .get_or_create_collection(TEST_COLLECTION, None)
+            .await
+            .unwrap();
+
+        let valid_collection_entries = CollectionEntries {
+            ids: vec!["123ABC".into()],
+            metadatas: None,
+            documents: Some(vec![
+                "Document content 1".into(),
+            ]),
+            embeddings: None,
+        };
+
+        let response = collection.add(
+            valid_collection_entries,
+            Some(Box::new(MockEmbeddingProvider)),
+        );
+        assert!(response.await.is_ok());
+
+        let response = collection.delete(Some(vec!["123ABC"]), None, None).await;
+
+        assert!(
+            response.is_ok(),
         );
     }
 }
