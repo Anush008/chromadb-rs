@@ -5,7 +5,7 @@ use async_trait::async_trait;
 #[cfg(feature = "bert")]
 pub mod bert;
 
-// #[cfg(feature = "openai")]
+#[cfg(feature = "openai")]
 pub mod openai;
 
 #[async_trait]
