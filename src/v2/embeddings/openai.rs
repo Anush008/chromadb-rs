@@ -5,7 +5,7 @@ use super::EmbeddingFunction;
 use crate::v2::commons::Embedding;
 
 const OPENAI_EMBEDDINGS_ENDPOINT: &str = "https://api.openai.com/v1/embeddings";
-const OPENAI_EMBEDDINGS_MODEL: &str = "text-embedding-ada-002";
+const OPENAI_EMBEDDINGS_MODEL: &str = "text-embedding-3-small";
 
 #[derive(Debug, Deserialize)]
 struct EmbeddingData {
