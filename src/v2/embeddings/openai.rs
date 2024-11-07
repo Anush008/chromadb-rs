@@ -28,7 +28,7 @@ pub struct OpenAIEmbeddings {
     config: OpenAIConfig
 }
 
-/// Defaults to the "text-embedding-ada-002" model
+/// Defaults to the "text-embedding-3-small" model
 /// The API key can be set in the OPENAI_API_KEY environment variable
 pub struct OpenAIConfig {
     pub api_endpoint: String,
