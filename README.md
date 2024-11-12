@@ -39,8 +39,8 @@ The library reference can be found [here](https://docs.rs/chromadb).
 #### You can connect to ChromaDB by instantiating a [ChromaClient](https://docs.rs/chromadb/latest/chromadb/v1/client/struct.ChromaClient.html)
  
  ```rust
-use chromadb::v1::ChromaClient;
-use chromadb::v1::collection::{ChromaCollection, GetQuery, GetResult, CollectionEntries};
+use chromadb::v2::ChromaClient;
+use chromadb::v2::collection::{ChromaCollection, GetQuery, GetResult, CollectionEntries};
 use serde_json::json;
 
 // With default ChromaClientOptions
@@ -55,7 +55,7 @@ let client: ChromaClient = ChromaClient::new(ChromaClientOptions { url: "<CHROMA
 
  ```rust
 // Get or create a collection with the given name and no metadata.
-let collection: ChromaCollection = client.get_or_create_collection("my_collection", None)?;
+let collection: ChromaCollection = client.get_or_create_collection("my_collection", None).await?;
 
 // Get the UUID of the collection
 let collection_uuid = collection.id();
@@ -76,7 +76,7 @@ let collection_entries = CollectionEntries {
     ])
  };
  
-let result: bool = collection.upsert(collection_entries, None)?;
+let result: bool = collection.upsert(collection_entries, None).await?;
 
 // Create a filter object to filter by document content.
 let where_document = json!({
@@ -93,7 +93,7 @@ let get_query = GetQuery {
      where_document: Some(where_document),
      include: Some(vec!["documents".into(),"embeddings".into()])
  };
-let get_result: GetResult = collection.get(get_query)?;
+let get_result: GetResult = collection.get(get_query).await?;
 println!("Get result: {:?}", get_result);
 
 ```
@@ -113,7 +113,7 @@ let query = QueryOptions {
     include: None,
  };
  
-let query_result: QueryResult = collection.query(query, None)?;
+let query_result: QueryResult = collection.query(query, None).await?;
 println!("Query result: {:?}", query_result);
 ```
 
@@ -123,7 +123,7 @@ println!("Query result: {:?}", query_result);
  To use [OpenAI](https://platform.openai.com/docs/guides/embeddings) embeddings, enable the `openai` feature in your Cargo.toml.
 
  ```rust
-let collection: ChromaCollection = client.get_or_create_collection("openai_collection", None)?;
+let collection: ChromaCollection = client.get_or_create_collection("openai_collection", None).await?;
 
 let collection_entries = CollectionEntries {
    ids: vec!["demo-id-1", "demo-id-2"],
@@ -137,7 +137,7 @@ let collection_entries = CollectionEntries {
 // Use OpenAI embeddings
 let openai_embeddings = OpenAIEmbeddings::new(Default::default());
 
-collection.upsert(collection_entries, Some(Box::new(openai_embeddings)))?;
+collection.upsert(collection_entries, Some(Box::new(openai_embeddings))).await?;
  ```
 
  To use [SBERT](https://docs.rs/crate/rust-bert/latest) embeddings, enable the `bert` feature in your Cargo.toml.
@@ -157,7 +157,7 @@ let sbert_embeddings = SentenceEmbeddingsBuilder::remote(
                          SentenceEmbeddingsModelType::AllMiniLmL6V2
                         ).create_model()?;
 
-collection.upsert(collection_entries, Some(Box::new(sbert_embeddings)))?;
+collection.upsert(collection_entries, Some(Box::new(sbert_embeddings))).await?;
  ```
 
 ## Sponsors

@@ -1,10 +1,12 @@
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use super::EmbeddingFunction;
-use crate::v1::commons::Embedding;
+use crate::v2::commons::Embedding;
 
 const OPENAI_EMBEDDINGS_ENDPOINT: &str = "https://api.openai.com/v1/embeddings";
-const OPENAI_EMBEDDINGS_MODEL: &str = "text-embedding-ada-002";
+const OPENAI_EMBEDDINGS_MODEL: &str = "text-embedding-3-small";
 
 #[derive(Debug, Deserialize)]
 struct EmbeddingData {
@@ -24,10 +26,10 @@ struct EmbeddingResponse {
 
 /// Represents the OpenAI Embeddings provider
 pub struct OpenAIEmbeddings {
-    config: OpenAIConfig,
+    config: OpenAIConfig
 }
 
-/// Defaults to the "text-embedding-ada-002" model
+/// Defaults to the "text-embedding-3-small" model
 /// The API key can be set in the OPENAI_API_KEY environment variable
 pub struct OpenAIConfig {
     pub api_endpoint: String,
@@ -50,53 +52,58 @@ impl OpenAIEmbeddings {
         Self { config }
     }
 
-    fn post<T: Serialize>(&self, json_body: T) -> anyhow::Result<minreq::Response> {
-        let res = minreq::post(&self.config.api_endpoint)
-            .with_header("Content-Type", "application/json")
-            .with_header("Authorization", format!("Bearer {}", self.config.api_key))
-            .with_json(&json_body)?
-            .send()?;
+    async fn post<T: Serialize>(&self, json_body: T) -> anyhow::Result<Value> {
+        let client = reqwest::Client::new();
+        let res = client.post(&self.config.api_endpoint)
+            .body("the exact body that is sent")
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("Bearer {}", self.config.api_key))
+            .json(&json_body)
+            .send()
+            .await?;
 
-        match res.status_code {
-            200..=299 => Ok(res),
-            _ => anyhow::bail!(
-                "{} {}: {}",
-                res.status_code,
-                res.reason_phrase,
-                res.as_str().unwrap()
-            ),
+        match res.error_for_status() {
+            Ok(res) => {
+                Ok(res.json().await?)
+            },
+            Err(e) => {
+                Err(e.into())
+            }
         }
     }
 }
 
+#[async_trait]
 impl EmbeddingFunction for OpenAIEmbeddings {
-    fn embed(&self, docs: &[&str]) -> anyhow::Result<Vec<Embedding>> {
+    async fn embed(&self, docs: &[&str]) -> anyhow::Result<Vec<Embedding>> {
         let mut embeddings = Vec::new();
-        docs.iter().for_each(|doc| {
+        for doc in docs {
             let req = EmbeddingRequest {
                 model: &self.config.model,
                 input: &doc,
             };
-            let res = self.post(req).unwrap();
-            let body = res.json::<EmbeddingResponse>().unwrap();
+            let res = self.post(req).await?;
+            let body = serde_json::from_value::<EmbeddingResponse>(res)?;
             embeddings.push(body.data[0].embedding.clone());
-        });
+        }
+
         Ok(embeddings)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::v1::collection::CollectionEntries;
+    use crate::v2::collection::CollectionEntries;
     use super::*;
-    use crate::v1::ChromaClient;
+    use crate::v2::ChromaClient;
 
-    #[test]
-    fn test_openai_embeddings() {
+    #[tokio::test]
+    async fn test_openai_embeddings() {
 
         let client = ChromaClient::new(Default::default());
         let collection = client
             .get_or_create_collection("open-ai-test-collection", None)
+            .await
             .unwrap();
         let openai_embeddings = OpenAIEmbeddings::new(Default::default());
 
@@ -115,6 +122,7 @@ mod tests {
 
         collection
             .upsert(collection_entries, Some(Box::new(openai_embeddings)))
+            .await
             .unwrap();
     }
 }

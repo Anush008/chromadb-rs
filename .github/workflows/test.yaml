@@ -1,20 +1,26 @@
 name: "Cargo Tests"
 on:
-    pull_request:
-      types:
-        - opened
-        - edited
-        - synchronize
-        - reopened
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
   
 env:
   CARGO_TERM_COLOR: always
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    
+    services:
+      chroma:
+        image: 'chromadb/chroma:0.5.0'
+        ports:
+          - '8000:8000'
+    
     steps:
       - uses: actions/checkout@v3
-      - name: ChromaDB
-        uses: CakeCrusher/chroma@v1.0.3
       - name: Run tests
         run: cargo test

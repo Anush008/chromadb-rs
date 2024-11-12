@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 pub use super::api::{ChromaAuthMethod, ChromaTokenHeader};
 use super::{
-    api::APIClientV1,
+    api::APIClientAsync,
     commons::{Metadata, Result},
     ChromaCollection,
 };
@@ -14,7 +14,7 @@ const DEFAULT_ENDPOINT: &str = "http://localhost:8000";
 
 // A client representation for interacting with ChromaDB.
 pub struct ChromaClient {
-    api: Arc<APIClientV1>,
+    api: Arc<APIClientAsync>,
 }
 
 /// The options for instantiating ChromaClient.
@@ -35,7 +35,7 @@ impl ChromaClient {
         };
 
         ChromaClient {
-            api: Arc::new(APIClientV1::new(endpoint, auth)),
+            api: Arc::new(APIClientAsync::new(endpoint, auth)),
         }
     }
 
@@ -51,7 +51,7 @@ impl ChromaClient {
     ///
     /// * If the collection already exists and get_or_create is false
     /// * If the collection name is invalid
-    pub fn create_collection(
+    pub async fn create_collection(
         &self,
         name: &str,
         metadata: Option<Metadata>,
@@ -62,8 +62,8 @@ impl ChromaClient {
             "metadata": metadata,
             "get_or_create": get_or_create,
         });
-        let response = self.api.post("/collections", Some(request_body))?;
-        let mut collection = response.json::<ChromaCollection>()?;
+        let response = self.api.post("/collections", Some(request_body)).await?;
+        let mut collection = response.json::<ChromaCollection>().await?;
         collection.api = self.api.clone();
         Ok(collection)
     }
@@ -78,18 +78,18 @@ impl ChromaClient {
     /// # Errors
     ///
     /// * If the collection name is invalid
-    pub fn get_or_create_collection(
+    pub async fn get_or_create_collection(
         &self,
         name: &str,
         metadata: Option<Metadata>,
     ) -> Result<ChromaCollection> {
-        self.create_collection(name, metadata, true)
+        self.create_collection(name, metadata, true).await
     }
 
     /// List all collections
-    pub fn list_collections(&self) -> Result<Vec<ChromaCollection>> {
-        let response = self.api.get("/collections")?;
-        let collections = response.json::<Vec<ChromaCollection>>()?;
+    pub async fn list_collections(&self) -> Result<Vec<ChromaCollection>> {
+        let response = self.api.get("/collections").await?;
+        let collections = response.json::<Vec<ChromaCollection>>().await?;
         let collections = collections
             .into_iter()
             .map(|mut collection| {
@@ -110,9 +110,9 @@ impl ChromaClient {
     ///
     /// * If the collection name is invalid
     /// * If the collection does not exist
-    pub fn get_collection(&self, name: &str) -> Result<ChromaCollection> {
-        let response = self.api.get(&format!("/collections/{}", name))?;
-        let mut collection = response.json::<ChromaCollection>()?;
+    pub async fn get_collection(&self, name: &str) -> Result<ChromaCollection> {
+        let response = self.api.get(&format!("/collections/{}", name)).await?;
+        let mut collection = response.json::<ChromaCollection>().await?;
         collection.api = self.api.clone();
         Ok(collection)
     }
@@ -127,29 +127,29 @@ impl ChromaClient {
     ///
     /// * If the collection name is invalid
     /// * If the collection does not exist
-    pub fn delete_collection(&self, name: &str) -> Result<()> {
-        self.api.delete(&format!("/collections/{}", name))?;
+    pub async fn delete_collection(&self, name: &str) -> Result<()> {
+        self.api.delete(&format!("/collections/{}", name)).await?;
         Ok(())
     }
 
     /// Resets the database. This will delete all collections and entries.
-    pub fn reset(&self) -> Result<bool> {
-        let respones = self.api.post("/reset", None)?;
-        let result = respones.json::<bool>()?;
+    pub async fn reset(&self) -> Result<bool> {
+        let respones = self.api.post("/reset", None).await?;
+        let result = respones.json::<bool>().await?;
         Ok(result)
     }
 
     /// The version of Chroma
-    pub fn version(&self) -> Result<String> {
-        let response = self.api.get("/version")?;
-        let version = response.json::<String>()?;
+    pub async fn version(&self) -> Result<String> {
+        let response = self.api.get("/version").await?;
+        let version = response.json::<String>().await?;
         Ok(version)
     }
 
     /// Get the current time in nanoseconds since epoch. Used to check if the server is alive.
-    pub fn heartbeat(&self) -> Result<u64> {
-        let response = self.api.get("/heartbeat")?;
-        let json = response.json::<HeartbeatResponse>()?;
+    pub async fn heartbeat(&self) -> Result<u64> {
+        let response = self.api.get("/heartbeat").await?;
+        let json = response.json::<HeartbeatResponse>().await?;
         Ok(json.heartbeat)
     }
 }
@@ -163,74 +163,85 @@ struct HeartbeatResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio;
+
 
     const TEST_COLLECTION: &str = "8-recipies-for-octopus";
 
-    #[test]
-    fn test_heartbeat() {
+    #[tokio::test]
+    async fn test_heartbeat() {
         let client: ChromaClient = ChromaClient::new(Default::default());
 
-        let heartbeat = client.heartbeat().unwrap();
+        let heartbeat = client.heartbeat().await.unwrap();
         assert!(heartbeat > 0);
     }
 
-    #[test]
-    fn test_version() {
+    #[tokio::test]
+    async fn test_version() {
         let client: ChromaClient = ChromaClient::new(Default::default());
 
-        let version = client.version().unwrap();
+        let version = client.version().await.unwrap();
         assert_eq!(version.split('.').count(), 3);
     }
 
-    #[test]
-    fn test_reset() {
+    #[tokio::test]
+    async fn test_reset() {
         let client: ChromaClient = ChromaClient::new(Default::default());
 
-        let result = client.reset();
+        let result = client.reset().await;
         assert!(result.is_err_and(|e| e
             .to_string()
             .contains("Resetting is not allowed by this configuration")));
     }
 
-    #[test]
-    fn test_create_collection() {
+    #[tokio::test]
+    async fn test_create_collection() {
         let client: ChromaClient = ChromaClient::new(Default::default());
 
         let result = client
             .create_collection(TEST_COLLECTION, None, true)
+            .await
             .unwrap();
         assert_eq!(result.name(), TEST_COLLECTION);
     }
 
-    #[test]
-    fn test_get_collection() {
+    #[tokio::test]
+    async fn test_get_collection() {
         let client: ChromaClient = ChromaClient::new(Default::default());
+        
+        const GET_TEST_COLLECTION: &str = "100-recipes-for-octopus";
 
-        let collection = client.get_collection(TEST_COLLECTION).unwrap();
-        assert_eq!(collection.name(), TEST_COLLECTION);
+        client
+            .create_collection(GET_TEST_COLLECTION, None, true)
+            .await
+            .unwrap();
+
+        let collection = client.get_collection(GET_TEST_COLLECTION).await.unwrap();
+        assert_eq!(collection.name(), GET_TEST_COLLECTION);
     }
 
-    #[test]
-    fn test_list_collection() {
+    #[tokio::test]
+    async fn test_list_collection() {
         let client: ChromaClient = ChromaClient::new(Default::default());
 
-        let result = client.list_collections().unwrap();
+        let result = client.list_collections().await.unwrap();
         assert!(result.len() > 0);
     }
 
-    #[test]
-    fn test_delete_collection() {
+    #[tokio::test]
+    async fn test_delete_collection() {
         let client: ChromaClient = ChromaClient::new(Default::default());
 
         const DELETE_TEST_COLLECTION: &str = "6-recipies-for-octopus";
         client
             .get_or_create_collection(DELETE_TEST_COLLECTION, None)
+            .await
             .unwrap();
 
-        let collection = client.delete_collection(DELETE_TEST_COLLECTION);
+        let collection = client.delete_collection(DELETE_TEST_COLLECTION).await;
         assert!(collection.is_ok());
 
-        let collection = client.delete_collection(DELETE_TEST_COLLECTION);
+        let collection = client.delete_collection(DELETE_TEST_COLLECTION).await;
         assert!(collection.is_err());
     }
 }
