@@ -140,31 +140,11 @@ let openai_embeddings = OpenAIEmbeddings::new(Default::default());
 collection.upsert(collection_entries, Some(Box::new(openai_embeddings))).await?;
  ```
 
- To use [SBERT](https://docs.rs/crate/rust-bert/latest) embeddings, enable the `bert` feature in your Cargo.toml.
-
- ```rust
-let collection_entries = CollectionEntries {
-   ids: vec!["demo-id-1", "demo-id-2"],
-   embeddings: None,
-   metadatas: None,
-   documents: Some(vec![
-            "Some document about 9 octopus recipies",
-            "Some other document about DCEU Superman Vs CW Superman"])
- };
-
- // Use SBERT embeddings
-let sbert_embeddings = SentenceEmbeddingsBuilder::remote(
-                         SentenceEmbeddingsModelType::AllMiniLmL6V2
-                        ).create_model()?;
-
-collection.upsert(collection_entries, Some(Box::new(sbert_embeddings))).await?;
- ```
-
 ## Sponsors
 
 [![OpenSauced logo](https://raw.githubusercontent.com/open-sauced/assets/main/logos/logo-on-dark.png)](https://opensauced.pizza?utm_source=chromadbrs&utm_medium=github&utm_campaign=sponsorship)
 
-[OpenSauced](https://opensauced.pizza?utm_source=chromadbrs&utm_medium=github&utm_campaign=sponsorship) provides insights into open source projects by using data science in git commits. 
+[OpenSauced](https://opensauced.pizza?utm_source=chromadbrs&utm_medium=github&utm_campaign=sponsorship) provides insights into open source projects by using data science in git commits.
 
 ## ⚖️ LICENSE
 

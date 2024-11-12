@@ -2,9 +2,6 @@ use super::commons::Embedding;
 use anyhow::Result;
 use async_trait::async_trait;
 
-#[cfg(feature = "bert")]
-pub mod bert;
-
 #[cfg(feature = "openai")]
 pub mod openai;
 
@@ -14,7 +11,7 @@ pub trait EmbeddingFunction {
 }
 
 #[derive(Clone)]
-pub(super) struct MockEmbeddingProvider;
+pub struct MockEmbeddingProvider;
 
 #[async_trait]
 impl EmbeddingFunction for MockEmbeddingProvider {

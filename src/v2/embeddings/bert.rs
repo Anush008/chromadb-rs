@@ -1,5 +1,5 @@
 use super::EmbeddingFunction;
-use crate::v1::commons::{Embedding, Result};
+use crate::v2::commons::{Embedding, Result};
 pub use rust_bert::pipelines::sentence_embeddings::*;
 
 impl EmbeddingFunction for SentenceEmbeddingsModel {
