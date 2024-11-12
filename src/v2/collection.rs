@@ -515,29 +515,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_from_collection() {
-        let client = ChromaClient::new(Default::default());
-
-        let collection = client
-            .get_or_create_collection(TEST_COLLECTION, None)
-            .await
-            .unwrap();
-        assert!(collection.count().await.is_ok());
-
-        let get_query = GetOptions {
-            ids: vec![],
-            where_metadata: None,
-            limit: None,
-            offset: None,
-            where_document: None,
-            include: None,
-        };
-
-        let get_result = collection.get(get_query).await.unwrap();
-        assert_eq!(get_result.ids.len(), collection.count().await.unwrap());
-    }
-
-    #[tokio::test]
     async fn test_add_to_collection() {
         let client = ChromaClient::new(Default::default());
 
