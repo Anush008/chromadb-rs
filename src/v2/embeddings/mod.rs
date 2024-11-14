@@ -6,7 +6,7 @@ use async_trait::async_trait;
 pub mod openai;
 
 #[async_trait]
-pub trait EmbeddingFunction {
+pub trait EmbeddingFunction: Send + Sync {
     async fn embed(&self, docs: &[&str]) -> Result<Vec<Embedding>>;
 }
 
@@ -19,4 +19,3 @@ impl EmbeddingFunction for MockEmbeddingProvider {
         Ok(docs.iter().map(|_| vec![0.0_f32; 768]).collect())
     }
 }
-
