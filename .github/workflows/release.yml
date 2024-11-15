@@ -1,9 +1,5 @@
 name: Semantic Release
 on:
-  push:
-    branches:
-      - master
-      - beta
   workflow_dispatch:
   
 env:
