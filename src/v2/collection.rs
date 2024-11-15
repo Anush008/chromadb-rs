@@ -392,10 +392,10 @@ pub struct QueryOptions<'a> {
 #[derive(Deserialize, Debug)]
 pub struct QueryResult {
     pub ids: Vec<Vec<String>>,
-    pub metadatas: Option<Vec<Option<Vec<Option<Metadata>>>>>,
-    pub documents: Option<Vec<Option<Vec<Option<String>>>>>,
-    pub embeddings: Option<Vec<Option<Vec<Embedding>>>>,
-    pub distances: Option<Vec<Option<Vec<f32>>>>,
+    pub metadatas: Option<Vec<Vec<Metadata>>>,
+    pub documents: Option<Vec<Vec<String>>>,
+    pub embeddings: Option<Vec<Vec<Embedding>>>,
+    pub distances: Option<Vec<Vec<f32>>>,
 }
 
 #[derive(Serialize, Debug, Default)]
