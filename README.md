@@ -6,54 +6,52 @@
   <a href="https://github.com/Anush008/chromadb-rs/actions/workflows/cargo-test.yml"><img src="https://github.com/Anush008/chromadb-rs/actions/workflows/release.yml/badge.svg?branch=master" alt="Tests"></a>
 </div>
 
-## ⚙️ Running ChromaDB
-> ℹ Chroma can be run in-memory in Python (without Docker), but this feature is not yet available in other languages.
-> To use this library you either need a hosted or local version of ChromaDB running.
-
-If you can run `docker-compose up -d --build` you can run Chroma.
-
-```shell
-git clone https://github.com/chroma-core/chroma.git
-cd chroma
-# Run a ChromaDB instance at localhost:8000
-docker-compose up -d --build
-```
-
-More information about deploying Chroma to production can be found [here](https://docs.trychroma.com/deployment).
-
 ## 🚀 Installing the library
+
 ```shell
 cargo add chromadb
 ```
-The library crate can be found at [crates.io](https://crates.io/crates/chromadb).
+
+The crate can be found at [crates.io](https://crates.io/crates/chromadb).
 
 ## 📖 Documentation
+
 The library reference can be found [here](https://docs.rs/chromadb).
 
 ## 🔍 Overview
 
-#### The library provides 2 modules to interact with the ChromaDB server via API V1:
- * `client` - To interface with the ChromaDB server.
- * `collection` - To interface with an associated ChromaDB collection.
+#### The library provides 2 modules to interact with the ChromaDB server via API V1
+
+* `client` - To interface with the ChromaDB server.
+* `collection` - To interface with an associated ChromaDB collection.
 
 #### You can connect to ChromaDB by instantiating a [ChromaClient](https://docs.rs/chromadb/latest/chromadb/v1/client/struct.ChromaClient.html)
- 
+
  ```rust
-use chromadb::v2::ChromaClient;
+use chromadb::v2::client::{ChromaAuthMethod, ChromaClient, ChromaClientOptions, ChromaTokenHeader};
 use chromadb::v2::collection::{ChromaCollection, GetQuery, GetResult, CollectionEntries};
-use serde_json::json;
 
 // With default ChromaClientOptions
 // Defaults to http://localhost:8000
 let client: ChromaClient = ChromaClient::new(Default::default());
 
 // With custom ChromaClientOptions
-let client: ChromaClient = ChromaClient::new(ChromaClientOptions { url: "<CHROMADB_URL>".into() });
+let auth = ChromaAuthMethod::TokenAuth {
+    token: "<TOKEN>".to_string(),
+    header: ChromaTokenHeader::Authorization
+};
+let client: ChromaClient = ChromaClient::new(ChromaClientOptions {
+    url: "<CHROMADB_URL>".into(),
+    database: Some("<DATABASE>".into()),
+    auth
+});
 ```
 
-#### Now that a client is instantiated, we can interface with the ChromaDB server.
+#### Now that a client is instantiated, we can interface with the ChromaDB server
 
  ```rust
+use serde_json::json;
+
 // Get or create a collection with the given name and no metadata.
 let collection: ChromaCollection = client.get_or_create_collection("my_collection", None).await?;
 
@@ -62,7 +60,7 @@ let collection_uuid = collection.id();
 println!("Collection UUID: {}", collection_uuid);
 ```
 
-###  With a collection instance, we can perform queries on the database
+### With a collection instance, we can perform queries on the database
 
 ```rust
 // Upsert some embeddings with documents and no metadata.
@@ -81,7 +79,7 @@ let result: bool = collection.upsert(collection_entries, None).await?;
 // Create a filter object to filter by document content.
 let where_document = json!({
     "$contains": "Superman"
-     });
+});
  
 // Get embeddings from a collection with filters and limit set to 1. 
 // An empty IDs vec will return all embeddings.
@@ -97,10 +95,11 @@ let get_result: GetResult = collection.get(get_query).await?;
 println!("Get result: {:?}", get_result);
 
 ```
+
 Find more information about the available filters and options in the [get()](https://docs.rs/chromadb/latest/chromadb/v1/collection/struct.ChromaCollection.html#method.get) documentation.
 
-
 ### Performing a similarity search
+
 ```rust
 //Instantiate QueryOptions to perform a similarity search on the collection
 //Alternatively, an embedding_function can also be provided with query_texts to perform the search
@@ -117,7 +116,8 @@ let query_result: QueryResult = collection.query(query, None).await?;
 println!("Query result: {:?}", query_result);
 ```
 
- ### Support for Embedding providers
+### Support for Embedding providers
+
  This crate has built-in support for OpenAI and SBERT embeddings.
 
  To use [OpenAI](https://platform.openai.com/docs/guides/embeddings) embeddings, enable the `openai` feature in your Cargo.toml.

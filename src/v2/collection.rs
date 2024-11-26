@@ -241,9 +241,7 @@ impl ChromaCollection {
 
         match response.error_for_status() {
             Ok(_) => Ok(()),
-            Err(e) => {
-                Err(e.into())
-            }
+            Err(e) => Err(e.into()),
         }
     }
 
@@ -288,7 +286,8 @@ impl ChromaCollection {
             query_embeddings = Some(
                 embedding_function
                     .unwrap()
-                    .embed(query_texts.as_ref().unwrap()).await?,
+                    .embed(query_texts.as_ref().unwrap())
+                    .await?,
             );
         };
 
@@ -354,9 +353,7 @@ impl ChromaCollection {
 
         match response.error_for_status() {
             Ok(_) => Ok(()),
-            Err(e) => {
-                Err(e.into())
-            }
+            Err(e) => Err(e.into()),
         }
     }
 }
@@ -435,7 +432,8 @@ async fn validate<'a>(
         embeddings = Some(
             embedding_function
                 .unwrap()
-                .embed(documents.as_ref().unwrap()).await?,
+                .embed(documents.as_ref().unwrap())
+                .await?,
         );
     }
 
@@ -542,10 +540,7 @@ mod tests {
         let invalid_collection_entries = CollectionEntries {
             ids: vec!["test"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: None,
         };
         let response = collection.add(
@@ -560,10 +555,7 @@ mod tests {
         let valid_collection_entries = CollectionEntries {
             ids: vec!["test1", "test2"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: None,
         };
         let response = collection.add(
@@ -578,10 +570,7 @@ mod tests {
         let invalid_collection_entries = CollectionEntries {
             ids: vec!["test1", ""],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: None,
         };
         let response = collection.add(
@@ -593,10 +582,7 @@ mod tests {
         let invalid_collection_entries = CollectionEntries {
             ids: vec!["test", "test"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: Some(vec![vec![1.0, 2.0], vec![3.0, 4.0]]),
         };
         let response = collection.add(invalid_collection_entries, None);
@@ -608,10 +594,7 @@ mod tests {
         let collection_entries = CollectionEntries {
             ids: vec!["test1", "test2"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: None,
         };
         let response = collection.add(collection_entries, None);
@@ -623,10 +606,7 @@ mod tests {
         let collection_entries = CollectionEntries {
             ids: vec!["test1", "test2"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: None,
         };
         let response = collection.add(collection_entries, Some(Box::new(MockEmbeddingProvider)));
@@ -664,10 +644,7 @@ mod tests {
         let invalid_collection_entries = CollectionEntries {
             ids: vec!["test"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: None,
         };
         let response = collection.upsert(
@@ -682,10 +659,7 @@ mod tests {
         let valid_collection_entries = CollectionEntries {
             ids: vec!["test1", "test2"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: None,
         };
         let response = collection.upsert(
@@ -700,10 +674,7 @@ mod tests {
         let invalid_collection_entries = CollectionEntries {
             ids: vec!["test1", ""],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: None,
         };
         let response = collection.upsert(
@@ -715,10 +686,7 @@ mod tests {
         let invalid_collection_entries = CollectionEntries {
             ids: vec!["test", "test"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: Some(vec![vec![1.0, 2.0], vec![3.0, 4.0]]),
         };
         let response = collection.upsert(invalid_collection_entries, None);
@@ -730,10 +698,7 @@ mod tests {
         let collection_entries = CollectionEntries {
             ids: vec!["test1", "test2"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: None,
         };
         let response = collection.upsert(collection_entries, None);
@@ -745,10 +710,7 @@ mod tests {
         let collection_entries = CollectionEntries {
             ids: vec!["test1", "test2"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: None,
         };
         let response = collection.upsert(collection_entries, Some(Box::new(MockEmbeddingProvider)));
@@ -774,10 +736,12 @@ mod tests {
             embeddings: None,
         };
 
-        let response = collection.update(
-            valid_collection_entries,
-            Some(Box::new(MockEmbeddingProvider)),
-        ).await;
+        let response = collection
+            .update(
+                valid_collection_entries,
+                Some(Box::new(MockEmbeddingProvider)),
+            )
+            .await;
 
         println!("{:?}", response);
 
@@ -789,10 +753,7 @@ mod tests {
         let invalid_collection_entries = CollectionEntries {
             ids: vec!["test"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: None,
         };
         let response = collection.update(
@@ -807,10 +768,7 @@ mod tests {
         let valid_collection_entries = CollectionEntries {
             ids: vec!["test1", "test2"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: None,
         };
         let response = collection.update(
@@ -825,10 +783,7 @@ mod tests {
         let invalid_collection_entries = CollectionEntries {
             ids: vec!["test1", ""],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: None,
         };
         let response = collection.update(
@@ -840,10 +795,7 @@ mod tests {
         let invalid_collection_entries = CollectionEntries {
             ids: vec!["test", "test"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: Some(vec![vec![1.0, 2.0], vec![3.0, 4.0]]),
         };
         let response = collection.update(invalid_collection_entries, None);
@@ -855,10 +807,7 @@ mod tests {
         let collection_entries = CollectionEntries {
             ids: vec!["test1", "test2"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: None,
         };
         let response = collection.update(collection_entries, None);
@@ -870,10 +819,7 @@ mod tests {
         let collection_entries = CollectionEntries {
             ids: vec!["test1", "test2"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-                "Document content 2",
-            ]),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
             embeddings: None,
         };
         let response = collection.update(collection_entries, Some(Box::new(MockEmbeddingProvider)));
@@ -968,9 +914,7 @@ mod tests {
         let valid_collection_entries = CollectionEntries {
             ids: vec!["123ABC"],
             metadatas: None,
-            documents: Some(vec![
-                "Document content 1",
-            ]),
+            documents: Some(vec!["Document content 1"]),
             embeddings: None,
         };
 
@@ -982,8 +926,6 @@ mod tests {
 
         let response = collection.delete(Some(vec!["123ABC"]), None, None).await;
 
-        assert!(
-            response.is_ok(),
-        );
+        assert!(response.is_ok(),);
     }
 }
