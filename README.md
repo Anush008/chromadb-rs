@@ -1,6 +1,6 @@
 <div align="center">
   <h1><a href="https://crates.io/crates/chromadb">ChromaDB-rs</a></h1>
-  <h3>A Rust based client library for the Chroma vector database.</h3>
+  <h3>A Rust client library for the Chroma vector database.</h3>
   <a href="https://crates.io/crates/chromadb"><img src="https://img.shields.io/crates/v/chromadb.svg" alt="Crates.io"></a>
   <a href="https://github.com/Anush008/chromadb-rs/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-mit-blue.svg" alt="MIT Licensed"></a>
   <a href="https://github.com/Anush008/chromadb-rs/actions/workflows/cargo-test.yml"><img src="https://github.com/Anush008/chromadb-rs/actions/workflows/release.yml/badge.svg?branch=master" alt="Tests"></a>
