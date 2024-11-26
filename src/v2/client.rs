@@ -20,14 +20,24 @@ pub struct ChromaClient {
 /// The options for instantiating ChromaClient.
 #[derive(Debug, Default)]
 pub struct ChromaClientOptions {
+    /// The URL of the Chroma Server.
     pub url: String,
+    /// Authentication to use to connect to the Chroma Server.
     pub auth: ChromaAuthMethod,
+    /// Optional database name to scope all queries to.
+    pub database: Option<String>,
 }
 
 impl ChromaClient {
     /// Create a new Chroma client with the given options.
     /// * Defaults to `url`: http://localhost:8000
-    pub fn new(ChromaClientOptions { url, auth }: ChromaClientOptions) -> ChromaClient {
+    pub fn new(
+        ChromaClientOptions {
+            url,
+            auth,
+            database,
+        }: ChromaClientOptions,
+    ) -> ChromaClient {
         let endpoint = if url.is_empty() {
             std::env::var("CHROMA_URL").unwrap_or(DEFAULT_ENDPOINT.to_string())
         } else {
@@ -35,7 +45,7 @@ impl ChromaClient {
         };
 
         ChromaClient {
-            api: Arc::new(APIClientAsync::new(endpoint, auth)),
+            api: Arc::new(APIClientAsync::new(endpoint, auth, database)),
         }
     }
 
@@ -165,7 +175,6 @@ mod tests {
     use super::*;
     use tokio;
 
-
     const TEST_COLLECTION: &str = "8-recipies-for-octopus";
 
     #[tokio::test]
@@ -208,7 +217,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_collection() {
         let client: ChromaClient = ChromaClient::new(Default::default());
-        
+
         const GET_TEST_COLLECTION: &str = "100-recipes-for-octopus";
 
         client

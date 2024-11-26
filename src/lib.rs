@@ -6,7 +6,7 @@
 //!
 //! ### Instantiating [ChromaClient](crate::v2::ChromaClient)
 //! ```
-//! use chromadb::v2::client::{ChromaAuthMethod, ChromaClient, ChromaClientOptions};
+//! use chromadb::v2::client::{ChromaAuthMethod, ChromaClient, ChromaClientOptions, ChromaTokenHeader};
 //! use chromadb::v2::collection::{ChromaCollection, GetResult, GetOptions};
 //! use serde_json::json;
 //!
@@ -16,13 +16,14 @@
 //! let client: ChromaClient = ChromaClient::new(Default::default());
 //!
 //! // With custom ChromaClientOptions
-//! let auth = ChromaAuthMethod::TokenAuth { 
-//!     token: "<TOKEN>".to_string(), 
-//!     header: chromadb::v2::client::ChromaTokenHeader::Authorization 
+//! let auth = ChromaAuthMethod::TokenAuth {
+//!     token: "<TOKEN>".to_string(),
+//!     header: ChromaTokenHeader::Authorization
 //! };
-//! let client: ChromaClient = ChromaClient::new(ChromaClientOptions { 
+//! let client: ChromaClient = ChromaClient::new(ChromaClientOptions {
 //!     url: "<CHROMADB_URL>".into(),
-//!     auth 
+//!     database: Some("<DATABASE>".into()),
+//!     auth
 //! });
 //!
 //! # Ok(())

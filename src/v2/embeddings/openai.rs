@@ -26,7 +26,7 @@ struct EmbeddingResponse {
 
 /// Represents the OpenAI Embeddings provider
 pub struct OpenAIEmbeddings {
-    config: OpenAIConfig
+    config: OpenAIConfig,
 }
 
 /// Defaults to the "text-embedding-3-small" model
@@ -54,7 +54,8 @@ impl OpenAIEmbeddings {
 
     async fn post<T: Serialize>(&self, json_body: T) -> anyhow::Result<Value> {
         let client = reqwest::Client::new();
-        let res = client.post(&self.config.api_endpoint)
+        let res = client
+            .post(&self.config.api_endpoint)
             .body("the exact body that is sent")
             .header("Content-Type", "application/json")
             .header("Authorization", format!("Bearer {}", self.config.api_key))
@@ -63,12 +64,8 @@ impl OpenAIEmbeddings {
             .await?;
 
         match res.error_for_status() {
-            Ok(res) => {
-                Ok(res.json().await?)
-            },
-            Err(e) => {
-                Err(e.into())
-            }
+            Ok(res) => Ok(res.json().await?),
+            Err(e) => Err(e.into()),
         }
     }
 }
@@ -93,13 +90,12 @@ impl EmbeddingFunction for OpenAIEmbeddings {
 
 #[cfg(test)]
 mod tests {
-    use crate::v2::collection::CollectionEntries;
     use super::*;
+    use crate::v2::collection::CollectionEntries;
     use crate::v2::ChromaClient;
 
     #[tokio::test]
     async fn test_openai_embeddings() {
-
         let client = ChromaClient::new(Default::default());
         let collection = client
             .get_or_create_collection("open-ai-test-collection", None)
