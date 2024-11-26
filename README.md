@@ -6,13 +6,11 @@
   <a href="https://github.com/Anush008/chromadb-rs/actions/workflows/cargo-test.yml"><img src="https://github.com/Anush008/chromadb-rs/actions/workflows/release.yml/badge.svg?branch=master" alt="Tests"></a>
 </div>
 
-## 🚀 Installing the library
+## 💾 Installing the library
 
 ```shell
 cargo add chromadb
 ```
-
-The crate can be found at [crates.io](https://crates.io/crates/chromadb).
 
 ## 📖 Documentation
 
@@ -118,9 +116,9 @@ println!("Query result: {:?}", query_result);
 
 ### Support for Embedding providers
 
- This crate has built-in support for OpenAI and SBERT embeddings.
+This crate has built-in support for OpenAI and SBERT embeddings.
 
- To use [OpenAI](https://platform.openai.com/docs/guides/embeddings) embeddings, enable the `openai` feature in your Cargo.toml.
+To use [OpenAI](https://platform.openai.com/docs/guides/embeddings) embeddings, enable the `openai` feature in your Cargo.toml.
 
  ```rust
 let collection: ChromaCollection = client.get_or_create_collection("openai_collection", None).await?;
@@ -145,7 +143,3 @@ collection.upsert(collection_entries, Some(Box::new(openai_embeddings))).await?;
 [![OpenSauced logo](https://raw.githubusercontent.com/open-sauced/assets/main/logos/logo-on-dark.png)](https://opensauced.pizza?utm_source=chromadbrs&utm_medium=github&utm_campaign=sponsorship)
 
 [OpenSauced](https://opensauced.pizza?utm_source=chromadbrs&utm_medium=github&utm_campaign=sponsorship) provides insights into open source projects by using data science in git commits.
-
-## ⚖️ LICENSE
-
-MIT © [2023](https://github.com/Anush008/chromadb-rs/blob/master/LICENSE)
