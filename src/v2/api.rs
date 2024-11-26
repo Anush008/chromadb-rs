@@ -1,6 +1,6 @@
 use super::commons::Result;
 use base64::prelude::*;
-use reqwest::{Client, Response, Method};
+use reqwest::{Client, Method, Response};
 use serde_json::Value;
 
 #[derive(Clone, Debug)]
@@ -12,7 +12,10 @@ pub enum ChromaTokenHeader {
 #[derive(Clone, Debug)]
 pub enum ChromaAuthMethod {
     None,
-    BasicAuth { username: String, password: String },
+    BasicAuth {
+        username: String,
+        password: String,
+    },
     TokenAuth {
         token: String,
         header: ChromaTokenHeader,
@@ -29,14 +32,16 @@ impl Default for ChromaAuthMethod {
 pub(super) struct APIClientAsync {
     pub(super) api_endpoint: String,
     pub(super) auth_method: ChromaAuthMethod,
+    pub(super) database: Option<String>,
     client: Client,
 }
 
 impl APIClientAsync {
-    pub fn new(endpoint: String, auth_method: ChromaAuthMethod) -> Self {
+    pub fn new(endpoint: String, auth_method: ChromaAuthMethod, database: Option<String>) -> Self {
         Self {
             api_endpoint: format!("{}/api/v1", endpoint),
             auth_method,
+            database,
             client: Client::new(),
         }
     }
@@ -57,29 +62,35 @@ impl APIClientAsync {
         self.send_request(Method::DELETE, path, None).await
     }
 
-    async fn send_request(&self, method: Method, path: &str, json_body: Option<Value>) -> Result<Response> {
-        let url = format!("{}{}", self.api_endpoint, path);
-        
-        let mut request = self.client
-            .request(method, &url);
+    async fn send_request(
+        &self,
+        method: Method,
+        path: &str,
+        json_body: Option<Value>,
+    ) -> Result<Response> {
+        let url = if let Some(database) = &self.database {
+            format!("{}{}?database={}", self.api_endpoint, path, database)
+        } else {
+            format!("{}{}", self.api_endpoint, path,)
+        };
+
+        let mut request = self.client.request(method, &url);
 
         // Add auth headers if needed
         match &self.auth_method {
-            ChromaAuthMethod::None => {},
+            ChromaAuthMethod::None => {}
             ChromaAuthMethod::BasicAuth { username, password } => {
                 let credentials = BASE64_STANDARD.encode(format!("{username}:{password}"));
                 request = request.header("Authorization", format!("Basic {credentials}"));
             }
-            ChromaAuthMethod::TokenAuth { token, header } => {
-                match header {
-                    ChromaTokenHeader::Authorization => {
-                        request = request.header("Authorization", format!("Bearer {token}"));
-                    }
-                    ChromaTokenHeader::XChromaToken => {
-                        request = request.header("X-Chroma-Token", token);
-                    }
+            ChromaAuthMethod::TokenAuth { token, header } => match header {
+                ChromaTokenHeader::Authorization => {
+                    request = request.header("Authorization", format!("Bearer {token}"));
                 }
-            }
+                ChromaTokenHeader::XChromaToken => {
+                    request = request.header("X-Chroma-Token", token);
+                }
+            },
         }
 
         // Add JSON body if present
@@ -97,7 +108,7 @@ impl APIClientAsync {
         } else {
             let error_text = response.text().await?;
             anyhow::bail!(
-                "{} {}: {}", 
+                "{} {}: {}",
                 status.as_u16(),
                 status.canonical_reason().unwrap_or("Unknown"),
                 error_text
