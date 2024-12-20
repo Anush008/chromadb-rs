@@ -11,7 +11,7 @@ jobs:
     
     services:
       chroma:
-        image: 'chromadb/chroma:0.5.0'
+        image: 'chromadb/chroma:0.5.23'
         ports:
           - '8000:8000'
     
