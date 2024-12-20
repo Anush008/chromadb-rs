@@ -10,10 +10,10 @@
 //! use chromadb::collection::{ChromaCollection, GetResult, GetOptions};
 //! use serde_json::json;
 //!
-//!# fn doc_client_demo() -> anyhow::Result<()> {
+//!# async fn doc_client_demo() -> anyhow::Result<()> {
 //! // With default ChromaClientOptions
 //! // Defaults to http://localhost:8000
-//! let client: ChromaClient = ChromaClient::new(Default::default());
+//! let client: ChromaClient = ChromaClient::new(Default::default()).await.unwrap();
 //!
 //! // With custom ChromaClientOptions
 //! let auth = ChromaAuthMethod::TokenAuth {
@@ -21,10 +21,10 @@
 //!     header: ChromaTokenHeader::Authorization
 //! };
 //! let client: ChromaClient = ChromaClient::new(ChromaClientOptions {
-//!     url: "<CHROMADB_URL>".into(),
-//!     database: Some("<DATABASE>".into()),
+//!     url: Some("<CHROMADB_URL>".to_string()),
+//!     database: "<DATABASE>".to_string(),
 //!     auth
-//! });
+//! }).await.unwrap();
 //!
 //! # Ok(())
 //! # }
