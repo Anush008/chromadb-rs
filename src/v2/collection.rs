@@ -178,7 +178,7 @@ impl ChromaCollection {
             include,
         } = get_options;
         let mut json_body = json!({
-            "ids": ids,
+            "ids": if !ids.is_empty() { Some(ids) } else { None },
             "where": where_metadata,
             "limit": limit,
             "offset": offset,
@@ -474,7 +474,7 @@ mod tests {
     use serde_json::json;
 
     use crate::v2::{
-        collection::{CollectionEntries, QueryOptions},
+        collection::{CollectionEntries, GetOptions, QueryOptions},
         embeddings::MockEmbeddingProvider,
         ChromaClient,
     };
@@ -718,6 +718,28 @@ mod tests {
             response.await.is_ok(),
             "Embeddings are computed by the embedding_function if embeddings are None and documents are provided"
         );
+    }
+
+    #[tokio::test]
+    async fn test_get_all_embeddings_from_collection() {
+        let client = ChromaClient::new(Default::default());
+
+        let collection = client
+            .get_or_create_collection(TEST_COLLECTION, None)
+            .await
+            .unwrap();
+
+        let get_all_query = GetOptions {
+            ids: vec![],
+            where_metadata: None,
+            limit: None,
+            offset: None,
+            where_document: None,
+            include: None,
+        };
+        let get_all_result = collection.get(get_all_query).await.unwrap();
+
+        assert_eq!(get_all_result.ids.len(), collection.count().await.unwrap());
     }
 
     #[tokio::test]
