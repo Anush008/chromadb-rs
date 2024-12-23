@@ -55,14 +55,6 @@ impl ChromaClient {
                 .unwrap_or(std::env::var("CHROMA_URL").unwrap_or(DEFAULT_ENDPOINT.to_string()))
         };
         let user_identity = APIClientAsync::get_auth(&endpoint, &auth).await?;
-        if user_identity.databases.iter().all(|db| db != &database)
-            && !matches!(auth, ChromaAuthMethod::None)
-        {
-            return Err(anyhow::anyhow!(
-                "Database {} not found in user's databases",
-                database
-            ));
-        }
         Ok(ChromaClient {
             api: Arc::new(APIClientAsync::new(
                 endpoint,

@@ -45,6 +45,7 @@ pub(super) struct APIClientAsync {
 #[derive(serde::Deserialize)]
 pub(crate) struct UserIdentity {
     pub tenant: String,
+    #[allow(dead_code)]
     pub databases: Vec<String>,
 }
 
