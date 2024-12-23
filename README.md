@@ -26,8 +26,8 @@ The library reference can be found [here](https://docs.rs/chromadb).
 #### You can connect to ChromaDB by instantiating a [ChromaClient](https://docs.rs/chromadb/latest/chromadb/v1/client/struct.ChromaClient.html)
 
  ```rust
-use chromadb::v2::client::{ChromaAuthMethod, ChromaClient, ChromaClientOptions, ChromaTokenHeader};
-use chromadb::v2::collection::{ChromaCollection, GetQuery, GetResult, CollectionEntries};
+use chromadb::client::{ChromaAuthMethod, ChromaClient, ChromaClientOptions, ChromaTokenHeader};
+use chromadb::collection::{ChromaCollection, GetQuery, GetResult, CollectionEntries};
 
 // With default ChromaClientOptions
 // Defaults to http://localhost:8000
@@ -39,8 +39,8 @@ let auth = ChromaAuthMethod::TokenAuth {
     header: ChromaTokenHeader::Authorization
 };
 let client: ChromaClient = ChromaClient::new(ChromaClientOptions {
-    url: "<CHROMADB_URL>".into(),
-    database: Some("<DATABASE>".into()),
+    url: Some("<CHROMADB_URL>".into()),
+    database: "<DATABASE>".into(),
     auth
 });
 ```
