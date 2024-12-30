@@ -1,5 +1,5 @@
 use super::EmbeddingFunction;
-use crate::v2::commons::{Embedding, Result};
+use crate::commons::{Embedding, Result};
 pub use rust_bert::pipelines::sentence_embeddings::*;
 
 impl EmbeddingFunction for SentenceEmbeddingsModel {
@@ -10,8 +10,8 @@ impl EmbeddingFunction for SentenceEmbeddingsModel {
 
 #[cfg(test)]
 mod tests {
-    use crate::v2::collection::CollectionEntries;
-    use crate::v2::ChromaClient;
+    use crate::collection::CollectionEntries;
+    use crate::ChromaClient;
     use super::*;
 
     #[tokio::test]

@@ -38,7 +38,7 @@ impl ChromaCollection {
     /// The total number of embeddings added to the database.
     pub async fn count(&self) -> Result<usize> {
         let path = format!("/collections/{}/count", self.id);
-        let response = self.api.get(&path).await?;
+        let response = self.api.get_database(&path).await?;
         let count = response.json::<usize>().await?;
         Ok(count)
     }
@@ -59,7 +59,7 @@ impl ChromaCollection {
             "new_metadata": metadata,
         });
         let path = format!("/collections/{}", self.id);
-        self.api.put(&path, Some(json_body)).await?;
+        self.api.put_database(&path, Some(json_body)).await?;
         Ok(())
     }
 
@@ -104,7 +104,7 @@ impl ChromaCollection {
         });
 
         let path = format!("/collections/{}/add", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
+        let response = self.api.post_database(&path, Some(json_body)).await?;
         let response = response.json::<Value>().await?;
 
         Ok(response)
@@ -151,7 +151,7 @@ impl ChromaCollection {
         });
 
         let path = format!("/collections/{}/upsert", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
+        let response = self.api.post_database(&path, Some(json_body)).await?;
         let response = response.json::<Value>().await?;
 
         Ok(response)
@@ -192,7 +192,7 @@ impl ChromaCollection {
             .retain(|_, v| !v.is_null());
 
         let path = format!("/collections/{}/get", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
+        let response = self.api.post_database(&path, Some(json_body)).await?;
         let get_result = response.json::<GetResult>().await?;
         Ok(get_result)
     }
@@ -237,7 +237,7 @@ impl ChromaCollection {
         });
 
         let path = format!("/collections/{}/update", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
+        let response = self.api.post_database(&path, Some(json_body)).await?;
 
         match response.error_for_status() {
             Ok(_) => Ok(()),
@@ -305,7 +305,7 @@ impl ChromaCollection {
             .retain(|_, v| !v.is_null());
 
         let path = format!("/collections/{}/query", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
+        let response = self.api.post_database(&path, Some(json_body)).await?;
         let query_result = response.json::<QueryResult>().await?;
         Ok(query_result)
     }
@@ -349,7 +349,7 @@ impl ChromaCollection {
         });
 
         let path = format!("/collections/{}/delete", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
+        let response = self.api.post_database(&path, Some(json_body)).await?;
 
         match response.error_for_status() {
             Ok(_) => Ok(()),
@@ -403,11 +403,11 @@ pub struct CollectionEntries<'a> {
     pub embeddings: Option<Embeddings>,
 }
 
-async fn validate<'a>(
+async fn validate(
     require_embeddings_or_documents: bool,
-    collection_entries: CollectionEntries<'a>,
+    collection_entries: CollectionEntries<'_>,
     embedding_function: Option<Box<dyn EmbeddingFunction>>,
-) -> Result<CollectionEntries> {
+) -> Result<CollectionEntries<'_>> {
     let CollectionEntries {
         ids,
         mut embeddings,
@@ -473,7 +473,7 @@ async fn validate<'a>(
 mod tests {
     use serde_json::json;
 
-    use crate::v2::{
+    use crate::{
         collection::{CollectionEntries, GetOptions, QueryOptions},
         embeddings::MockEmbeddingProvider,
         ChromaClient,
@@ -486,6 +486,8 @@ mod tests {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
+            .await
+            .unwrap()
             .get_or_create_collection(TEST_COLLECTION, None)
             .await
             .unwrap();
@@ -517,6 +519,8 @@ mod tests {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
+            .await
+            .unwrap()
             .get_or_create_collection(TEST_COLLECTION, None)
             .await
             .unwrap();
@@ -621,6 +625,8 @@ mod tests {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
+            .await
+            .unwrap()
             .get_or_create_collection(TEST_COLLECTION, None)
             .await
             .unwrap();
@@ -725,6 +731,8 @@ mod tests {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
+            .await
+            .unwrap()
             .get_or_create_collection(TEST_COLLECTION, None)
             .await
             .unwrap();
@@ -747,6 +755,8 @@ mod tests {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
+            .await
+            .unwrap()
             .get_or_create_collection(TEST_COLLECTION, None)
             .await
             .unwrap();
@@ -856,6 +866,8 @@ mod tests {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
+            .await
+            .unwrap()
             .get_or_create_collection(TEST_COLLECTION, None)
             .await
             .unwrap();
@@ -929,6 +941,8 @@ mod tests {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
+            .await
+            .unwrap()
             .get_or_create_collection(TEST_COLLECTION, None)
             .await
             .unwrap();

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::EmbeddingFunction;
-use crate::v2::commons::Embedding;
+use crate::commons::Embedding;
 
 const OPENAI_EMBEDDINGS_ENDPOINT: &str = "https://api.openai.com/v1/embeddings";
 const OPENAI_EMBEDDINGS_MODEL: &str = "text-embedding-3-small";
@@ -77,7 +77,7 @@ impl EmbeddingFunction for OpenAIEmbeddings {
         for doc in docs {
             let req = EmbeddingRequest {
                 model: &self.config.model,
-                input: &doc,
+                input: doc,
             };
             let res = self.post(req).await?;
             let body = serde_json::from_value::<EmbeddingResponse>(res)?;
@@ -91,13 +91,15 @@ impl EmbeddingFunction for OpenAIEmbeddings {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::v2::collection::CollectionEntries;
-    use crate::v2::ChromaClient;
+    use crate::collection::CollectionEntries;
+    use crate::ChromaClient;
 
     #[tokio::test]
     async fn test_openai_embeddings() {
         let client = ChromaClient::new(Default::default());
         let collection = client
+            .await
+            .unwrap()
             .get_or_create_collection("open-ai-test-collection", None)
             .await
             .unwrap();
