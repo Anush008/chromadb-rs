@@ -234,6 +234,7 @@ mod tests {
 
         let collection = client.get_collection(GET_TEST_COLLECTION).await.unwrap();
         assert_eq!(collection.name(), GET_TEST_COLLECTION);
+        assert!(collection.configuration_json.is_some());
     }
 
     #[tokio::test]

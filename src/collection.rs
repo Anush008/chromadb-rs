@@ -5,7 +5,7 @@ use std::{collections::HashSet, sync::Arc, vec};
 
 use super::{
     api::APIClientAsync,
-    commons::{Documents, Embedding, Embeddings, Metadata, Metadatas, Result},
+    commons::{Documents, Embedding, Embeddings, Metadata, Metadatas, Result, ConfigurationJson},
     embeddings::EmbeddingFunction,
 };
 
@@ -17,6 +17,7 @@ pub struct ChromaCollection {
     pub(super) id: String,
     pub(super) metadata: Option<Metadata>,
     pub(super) name: String,
+    pub(super) configuration_json: Option<ConfigurationJson>
 }
 
 impl ChromaCollection {
