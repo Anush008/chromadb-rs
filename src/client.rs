@@ -166,6 +166,26 @@ impl ChromaClient {
         Ok(())
     }
 
+    /// Update a collection with the given id.
+    ///
+    /// # Arguments
+    ///
+    /// * `collection_id` - The id of the collection to update
+    /// * `new_name` - Optional new name for the collection
+    /// * `metadata` - Optional new metadata for the collection
+    ///
+    /// # Errors
+    ///
+    /// * If the collection name is invalid
+    /// * If the collection does not exist
+    pub async fn update_collection(&self, collection_id: &str, new_name: Option<&str>, metadata: Option<Metadata>) -> Result<()> {
+        self.api.put_database(
+            &format!("/collections/{}", collection_id),
+            Some(json!({ "new_name": new_name,"new_metadata": metadata })),
+        ).await?;
+        Ok(())
+    }
+
     /// The version of Chroma
     pub async fn version(&self) -> Result<String> {
         let response = self.api.get_v1("/version").await?;
@@ -264,5 +284,30 @@ mod tests {
 
         let collection = client.delete_collection(DELETE_TEST_COLLECTION).await;
         assert!(collection.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_update_collection() {
+        let client: ChromaClient = ChromaClient::new(Default::default()).await.unwrap();
+
+        let collection = client.get_or_create_collection(TEST_COLLECTION, None).await.unwrap();
+        let collection_id = collection.id();
+
+        let result = client.update_collection(collection_id, None, None).await;
+        assert!(result.is_ok());
+
+        let new_name = "new_name";
+        let result = client.update_collection(collection_id, Some(new_name), None).await;
+        assert!(result.is_ok());
+
+        let updated_collection = client.get_collection(new_name).await.unwrap();
+        assert_eq!(collection_id, updated_collection.id());
+
+        let new_metadata = Some(json!({"foo": "bar"}).as_object().unwrap().clone());
+        let result = client.update_collection(collection_id, None, new_metadata.clone()).await;
+        assert!(result.is_ok());
+
+        let updated_collection = client.get_collection(new_name).await.unwrap();
+        assert_eq!(updated_collection.metadata(), new_metadata.as_ref());
     }
 }
