@@ -115,7 +115,10 @@ impl APIClientAsync {
         let client = Client::new();
         let request = client.request(Method::GET, url);
         let resp = Self::send_request_no_self(request, auth, None).await?;
-        let user_identity: UserIdentity = resp.json().await?;
+        let mut user_identity: UserIdentity = resp.json().await?;
+        if &user_identity.tenant == "*" {
+            user_identity.tenant = "default_tenant".to_string();
+        }
         Ok(user_identity)
     }
 
