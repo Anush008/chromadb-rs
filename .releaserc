@@ -55,11 +55,11 @@
           },
           {
             "type": "ci",
-            "release": "patch"
+            "release": false
           },
           {
             "type": "chore",
-            "release": false
+            "release": "patch"
           }
         ]
       }
