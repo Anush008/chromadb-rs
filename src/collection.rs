@@ -362,7 +362,7 @@ impl ChromaCollection {
 #[derive(Deserialize, Debug)]
 pub struct GetResult {
     pub ids: Vec<String>,
-    pub metadatas: Option<Vec<Option<Vec<Option<Metadata>>>>>,
+    pub metadatas: Option<Vec<Option<Metadata>>>,
     pub documents: Option<Vec<Option<String>>>,
     pub embeddings: Option<Vec<Option<Embedding>>>,
 }
