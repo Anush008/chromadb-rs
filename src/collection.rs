@@ -362,7 +362,7 @@ impl ChromaCollection {
 #[derive(Deserialize, Debug)]
 pub struct GetResult {
     pub ids: Vec<String>,
-    pub metadatas: Option<Vec<Option<Vec<Option<Metadata>>>>>,
+    pub metadatas: Option<Vec<Option<Metadata>>>,
     pub documents: Option<Vec<Option<String>>>,
     pub embeddings: Option<Vec<Option<Embedding>>>,
 }
@@ -749,6 +749,55 @@ mod tests {
         let get_all_result = collection.get(get_all_query).await.unwrap();
 
         assert_eq!(get_all_result.ids.len(), collection.count().await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_get_all_metadatas_from_collection() {
+        let client = ChromaClient::new(Default::default());
+
+        let collection = client
+            .await
+            .unwrap()
+            .get_or_create_collection(TEST_COLLECTION, None)
+            .await
+            .unwrap();
+
+        let test_metadatas = vec![
+            json!({"key1": "value1"}).as_object().unwrap().clone(),
+            json!({"key2": "value2"}).as_object().unwrap().clone(),
+        ];
+
+        let collection_entries = CollectionEntries {
+            ids: vec!["test1", "test2"],
+            metadatas: Some(test_metadatas),
+            documents: Some(vec!["Document content 1", "Document content 2"]),
+            embeddings: None,
+        };
+
+        let response = collection.add(collection_entries, Some(Box::new(MockEmbeddingProvider)));
+        assert!(response.await.is_ok());
+
+        let get_query = GetOptions {
+            ids: vec![],
+            where_metadata: None,
+            limit: None,
+            offset: None,
+            where_document: None,
+            include: Some(vec!["metadatas".into()]),
+        };
+
+        let get_result = collection.get(get_query).await.unwrap();
+
+        assert!(
+            get_result.metadatas.is_some(),
+            "Expected metadata to be present in the response"
+        );
+
+        assert_eq!(
+            get_result.metadatas.unwrap().len(),
+            2,
+            "Expected two metadata entries in the response"
+        );
     }
 
     #[tokio::test]
