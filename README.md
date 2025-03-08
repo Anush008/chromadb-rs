@@ -27,7 +27,7 @@ The library reference can be found [here](https://docs.rs/chromadb).
 
  ```rust
 use chromadb::client::{ChromaAuthMethod, ChromaClient, ChromaClientOptions, ChromaTokenHeader};
-use chromadb::collection::{ChromaCollection, GetQuery, GetResult, CollectionEntries};
+use chromadb::collection::{ChromaCollection, GetOptions, GetResult, CollectionEntries};
 
 // With default ChromaClientOptions
 // Defaults to http://localhost:8000
@@ -81,7 +81,7 @@ let where_document = json!({
  
 // Get embeddings from a collection with filters and limit set to 1. 
 // An empty IDs vec will return all embeddings.
-let get_query = GetQuery {
+let get_query = GetOptions {
      ids: vec![],
      where_metadata: None,
      limit: Some(1),
