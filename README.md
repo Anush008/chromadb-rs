@@ -1,3 +1,6 @@
+> [!IMPORTANT] 
+> This project has been archived. Please use to the official [Chroma Rust client](https://crates.io/crates/chroma).
+
 <div align="center">
   <h1><a href="https://crates.io/crates/chromadb">ChromaDB-rs</a></h1>
   <h3>A Rust client library for the Chroma vector database.</h3>
